@@ -1,0 +1,16 @@
+{
+  "name": "trustroots",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "node_modules/react-native/packager/packager.sh --nonPersistent"
+  },
+  "dependencies": {
+    "moment": "^2.14.1",
+    "react": "15.2.1",
+    "react-native": "0.29.2",
+    "react-native-material-design": "^0.3.6",
+    "react-native-store": "^0.4.1",
+    "react-native-vector-icons": "^2.0.3"
+  }
+}
