@@ -29,6 +29,10 @@ Configure development enviroment
 2. Install [Leiningen](http://leiningen.org/#install)
 3. Install re-natal: `npm install -g re-natal`
 
+In working directory:
+1. Install npm dependencies: `npm install`
+
+
 Develop
 ---------------------------------
 
