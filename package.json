@@ -6,11 +6,16 @@
     "start": "node_modules/react-native/packager/packager.sh --nonPersistent"
   },
   "dependencies": {
+    "babel-polyfill": "^6.9.1",
     "moment": "^2.14.1",
     "react": "15.2.1",
     "react-native": "^0.30.0",
     "react-native-material-design": "^0.3.6",
     "react-native-store": "^0.4.1",
     "react-native-vector-icons": "^2.0.3"
+  },
+  "devDependencies": {
+    "enzyme": "^2.4.1",
+    "react-native-mock": "^0.2.5"
   }
 }

@@ -1,7 +1,6 @@
 (ns trustroots.api
   (:require
-    [re-frame.core :refer [dispatch]]
-    [ajax.core :refer [GET POST]]))
+    [re-frame.core :refer [dispatch]]))
 
 (def baseurl "https://www.trustroots.org/api")
 (def url_map
@@ -27,15 +26,6 @@
   (let [
          url (get-url :signin)
        ]
-    (POST url {:params user
-               :response-format :json
-               :format :json
-               :handler       (fn [res]
-                                (println "SUCCESS POST signin")
-                                (.dir js/console res))
-               :error-handler (fn [res]
-                                (println "FAILED POST signin")
-                                (.dir js/console res))
-               :keywords? true
-              })))
+    ""
+    ))
 

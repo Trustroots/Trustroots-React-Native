@@ -4,14 +4,16 @@
             :license {:name "Eclipse Public License"
                       :url  "http://www.eclipse.org/legal/epl-v10.html"}
             :dependencies [[org.clojure/clojure "1.8.0"]
-                           [org.clojure/clojurescript "1.8.51"]
+                           ;[org.clojure/clojurescript "1.8.51"]
+                           [org.clojure/clojurescript "1.9.89"]
+
                            [reagent "0.6.0-rc" :exclusions [cljsjs/react cljsjs/react-dom cljsjs/react-dom-server]]
                            [re-frame  "0.7.0"]
                            [cljs-ajax "0.5.3"]
-                           [prismatic/schema "1.0.4"]]
-            :plugins [[lein-cljsbuild "1.1.1"]
-                      [lein-figwheel "0.5.0-6"]
-                      [lein-doo "0.1.7"]]
+                           [prismatic/schema "1.1.3"]
+                           [lein-doo "0.1.7"]]
+            :plugins [[lein-cljsbuild "1.1.3"]
+                      [lein-figwheel "0.5.0-6"]]
             :clean-targets ["target/" "index.ios.js" "index.android.js"]
             :aliases {"prod-build" ^{:doc "Recompile code with prod profile."}
                                    ["do" "clean"
@@ -21,14 +23,20 @@
             ;; test build
             ;; currently device is not automatically faked and thus testing
             ;; anything having a something to do with device is not possible.
-            :cljsbuild {:builds   {:test
-                                   {:source-paths ["test" "src" ]
-                                    :compiler     {
-                                                    :output-to     "target/test/test.js"
-                                                    :main          "trustroots.runner"
-                                                    :target        :nodejs
-                                                    :output-dir    "target/test"
-                                                    :optimizations :none}}}}
+            :hooks [leiningen.cljsbuild]
+            :cljsbuild {  :test-commands
+                                   {"unit" ["node" "run-test.js"]}
+                         :builds   {:test {:source-paths ["test" "src" "env/test"]
+                                           :compiler     {
+                                                           :output-to     "target/test/test.js"
+                                                           :main          "trustroots.runner"
+                                                           :target        :nodejs
+                                                           :preloads       [env.fakes]
+                                                           :closure-defines {"goog.DEBUG" true
+                                                                             "GLOBAL.__DEV__"    true
+                                                                             }
+                                                           :output-dir    "target/test"
+                                                           :optimizations :none}}}}
 
             ;; build actual app
             :profiles {:dev {:dependencies [[figwheel-sidecar "0.5.0-6"]
