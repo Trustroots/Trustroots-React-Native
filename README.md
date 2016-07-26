@@ -11,12 +11,11 @@ Stack
 
 - React Native 0.30
 - Re-natal
-- Clojure/ClojureScript (1.8.x)
+- Clojure/ClojureScript (1.9.x)
   - Reagent
   - Re-frame
   - Prismatic/schema
 - For testing:
-  - doo
   - cljs.test
 
 
@@ -47,7 +46,7 @@ re-natal use-figwheel
 lein figwheel android
 ```
 
-And once figwheel have started:
+And once figwheel have started and you've started *android virtual machine*:
 
 ```
 react-native run-android
@@ -60,7 +59,7 @@ For more comprehensive instructions see: [Re-natal's readme](https://github.com/
 Start doo test runner:
 
 ```
-lein doo node test
+lein cljsbuild test
 ```
 
 TODO: use [Enzyme to mock React Native]( https://github.com/airbnb/enzyme/blob/master/docs/guides/react-native.md)

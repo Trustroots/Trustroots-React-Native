@@ -49,3 +49,5 @@ target/
 # Figwheel
 #
 figwheel_server.log
+/re-natal
+/react-native

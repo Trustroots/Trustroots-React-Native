@@ -16,6 +16,8 @@
   },
   "devDependencies": {
     "enzyme": "^2.4.1",
+    "re-natal": "^0.2.38",
+    "react-native-cli": "^1.0.0",
     "react-native-mock": "^0.2.5"
   }
 }
