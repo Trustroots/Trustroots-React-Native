@@ -56,10 +56,16 @@ For more comprehensive instructions see: [Re-natal's readme](https://github.com/
 
 ### Run tests
 
-Start doo test runner:
+Run tests once by running:
 
 ```
 lein cljsbuild test
+```
+
+Start auto test runner: 
+
+```
+lein cljsbuild auto test
 ```
 
 TODO: use [Enzyme to mock React Native]( https://github.com/airbnb/enzyme/blob/master/docs/guides/react-native.md)
