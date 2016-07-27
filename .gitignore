@@ -49,5 +49,14 @@ target/
 # Figwheel
 #
 figwheel_server.log
+
+# symbol links if you don't want to install re-natal and react-native globally
 /re-natal
 /react-native
+
+# cider repl related
+/.nrepl-port
+.cljs_rhino_repl/
+
+# emacs temporary files
+\.[#]*
