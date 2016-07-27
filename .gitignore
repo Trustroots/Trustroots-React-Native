@@ -60,3 +60,6 @@ figwheel_server.log
 
 # emacs temporary files
 \.[#]*
+
+# npmn log
+\npm-debug.*

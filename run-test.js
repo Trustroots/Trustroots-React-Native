@@ -10,9 +10,14 @@
 
 require("babel-polyfill");
 require("react-native-mock/mock");
+var fetch = require("node-fetch");
+global.fetch = fetch
 
 // Execute test
 require("./target/test/test");
 
-process.exit()
+// process.exit()
+
+
+
 

@@ -26,4 +26,3 @@
              (= :debug @debug-level)
              (= :info @debug-level))
     (println thing)))
-
