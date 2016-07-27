@@ -4,6 +4,7 @@
     [re-frame.core :refer [register-handler after dispatch]]
     [schema.core :as   s :include-macros true]
     [trustroots.domain.main :refer [app-db schema]]
+    [trustroots.helpers :refer [log info debug]]
     [trustroots.db :as db]
     [trustroots.domain.auth :as auth]
     [trustroots.api :as api]
@@ -16,8 +17,8 @@
   "throw an exception if db doesn't match the schema."
   [a-schema db]
     (when-let [problems (s/check a-schema db)]
-      (println db)
-      (println problems)
+      (info db)
+      (info problems)
       (throw (js/Error. (str "Schema check failed: " problems)))))
 
 (def validate-schema-mw
@@ -35,6 +36,7 @@
     event-name
     validate-schema-mw
     (fn [db evt]
+      (debug (str "Dispatch " event-name))
       (apply handler-fn (concat [db] (rest evt))))))
 
 ;; Generic handlers
@@ -43,6 +45,7 @@
 (register-handler-for
   :initialize-db
   (fn [_ _]
+    (info app-db)
     app-db))
 
 ;; Navigation handlers
@@ -52,7 +55,6 @@
   :set-page
   (fn [db value]
     (assoc-in db [:page] value)))
-
 
 ;; DB handlers
 ;; -------------------------------------------------------------

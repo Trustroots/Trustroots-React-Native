@@ -2,6 +2,7 @@
   (:require-macros [reagent.ratom   :refer [reaction]])
   (:require [re-frame.core          :refer [register-sub]]
             [trustroots.domain.auth :as auth]
+            [trustroots.helpers :refer [log info debug]]
             ))
 
 ; Helpers
@@ -14,7 +15,7 @@
     msg
     (fn [db args]
       (reaction
-         (println (str "DISPATCH " msg " with args"))
+         (debug (str "DISPATCH " msg " with args"))
          (apply query-fn (concat [db] (rest args)))))))
 
 
@@ -36,7 +37,6 @@
 (register-sub-for
   :get-page
   (fn [db _]
-    (println @db)
     (if (auth/get-user @db)
       (get @db :page)
       "login" )))

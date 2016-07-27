@@ -24,14 +24,14 @@
             ;; currently device is not automatically faked and thus testing
             ;; anything having a something to do with device is not possible.
             :hooks [leiningen.cljsbuild]
-            :cljsbuild {  :test-commands
+            :cljsbuild { :test-commands
                                    {"unit" ["node" "run-test.js"]}
-                         :builds   {:test {:source-paths ["test" "src" "env/test"]
-                                           :compiler     {
+                        :builds   {:test {:source-paths ["test" "src" "env/test"]
+                                          :notify-command ["node" "run-test.js"]
+                                          :compiler     {
                                                            :output-to     "target/test/test.js"
                                                            :main          "trustroots.runner"
                                                            :target        :nodejs
-                                                           :preloads       [env.fakes]
                                                            :closure-defines {"goog.DEBUG" true
                                                                              "GLOBAL.__DEV__"    true
                                                                              }
