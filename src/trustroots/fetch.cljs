@@ -33,7 +33,9 @@
                    (-> (.json res)
                        (.then handle-data))))))))
 
-(defn fetch-json [& {:keys [url endpoint headers method body on-success on-error]} ]
+(defn fetch-json [& {:keys [url endpoint headers method body on-success on-error fetch-fn]
+                     :or   [fetch-fn js/fetch]
+                     } ]
   "Helper for JSON rest api request"
   (let [req-url        (if (nil? endpoint)
                          url
@@ -48,7 +50,7 @@
                      "credentials" "include"
                      "headers" (merge default-header headers)}
               optional-body )
-        query (js/fetch req-url (clj->js args))
+        query (fetch-fn req-url (clj->js args))
         ]
-
     (handle-fetch-promise query :on-error on-error :on-success on-success)))
+ 

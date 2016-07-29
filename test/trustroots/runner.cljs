@@ -1,14 +1,12 @@
 (ns trustroots.runner
-  (:require-macros [latte.core :as m :refer [describe it]])
-  (:require [cljs.test :refer-macros [run-tests async deftest is testing use-fixtures]]
-            [latte.chai :refer [expect]]
-            [trustroots.test-helper :as th]
-            [doo.runner :refer-macros [doo-tests]]
+  (:require [trustroots.test-helper :as th]
             [trustroots.db-test]
             [trustroots.handler-test]
             [trustroots.api-test]
-            ;[trustroots.fetch-test]
+            [trustroots.fetch-test]
             ))
+
+(enable-console-print!)
 
 (defn set-entry-point!
   "Sets the function to be run when starting the script"

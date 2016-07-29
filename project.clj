@@ -10,8 +10,6 @@
                            [re-frame  "0.7.0"]
                            [cljs-ajax "0.5.3"]
                            [prismatic/schema "1.1.3"]
-                           [lein-doo "0.1.7"]
-                           [mocha-latte "0.1.2"]
                            [chai-latte "0.2.0"]
                            ]
             :plugins [[lein-cljsbuild "1.1.3"]

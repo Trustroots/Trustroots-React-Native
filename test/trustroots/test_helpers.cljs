@@ -96,8 +96,20 @@
   (apply (with-asserts check-fns) nil)
   )
 
+(defmulti specs (fn [& args]
+                  (let [[fst snd :as all] args]
+                    (cond
+                        (and (map? fst) (nil? snd)) :raw-spec
+                        (string? fst) :spec-with-name
+                      )
+                    )))
 
-(defn specs [tests]
+
+(defmethod specs :spec-with-name [name spec]
+  (specs { name spec  })
+)
+
+(defmethod  specs :raw-spec [tests]
   :pre (map? tests)
   (doall (map
            (fn [[key value]]

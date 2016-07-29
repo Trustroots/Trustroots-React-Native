@@ -1,7 +1,6 @@
 (ns trustroots.handler-test
   (:require
    [trustroots.test-helper :refer [specs expect]]
-   [cljs.test :refer-macros [async deftest is testing use-fixtures run-tests]]
    [re-frame.core :as re :refer [subscribe dispatch dispatch-sync]]
    [trustroots.subs :as s]
    [trustroots.handlers :as t]

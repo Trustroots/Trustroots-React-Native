@@ -1,25 +1,10 @@
 (ns trustroots.fetch-test
   (:require
-   [cljs.test :refer-macros [async deftest is testing use-fixtures run-tests]]
+   [trustroots.test-helper :refer [specs expect do-asserts]]
    [trustroots.fetch :as t]))
 
 ; See here ho fetch should work in react native
 ; https://developer.mozilla.org/en-US/docs/Web/API/Request
-; Request.method   Contains the request's method (GET, POST, etc.)
-; Request.url      Contains the URL of the request.
-; Request.headers  Contains the associated Headers object of the request.
-; Request.context  Contains the context of the request (e.g., audio, image, iframe, etc.)
-; Request.referrer Contains the referrer of the request (e.g., client).
-; Request.referrerPolicy Contains the referrer policy of the request (e.g., no-referrer).
-; Request.mode        Contains the mode of the request (e.g., cors, no-cors, same-origin, navigate.)
-; Request.credentials Contains the credentials of the request (e.g., omit, same-origin).
-; Request.redirect    Contains the mode for how redirects are handled. It may be one of follow, error, or manual.
-; Request.integrity   Contains the subresource integrity value of the request (e.g., sha256-BpfBw7ivV8q2jLiT13fxDYAe2tJllusRSZ273h2nFSE=).
-; Request.cache       Contains the cache mode of the request (e.g., default, reload, no-cache).
-
-; In addition:
-; body               in this case string body is only supported
-; Body.bodyUsed Read only
 
 (def Promise (.-Promise (js/require "bluebird")))
 
@@ -35,58 +20,49 @@
     (-> Promise
         (.reject (clj->js data))))
 
-(deftest test-fetch-wrapper
-  (testing "t/fetch wrapper passes params correctly to js/fetch and call success callback"
-    (async done
-         (with-redefs
-           [js/fetch (fn [url args]
-                       (is (= "http://foo.com" url))
-                       (let [actual (js->clj args)
-                             expected  {"method"  "GET"
-                                        "headers" {"Content-Type" "text/json"}
-                                        "body"    "{\"foo\":\"bar\"}"
+(defn fetch-fake-1 [url args]
+  (do-asserts [:= "http://foo.com" url])
+  (let [actual (js->clj args)
+        expected  {"method"  "GET"
+                   "headers" {"Content-Type" "text/json"}
+                   "body"    "{\"foo\":\"bar\"}"
+                   ; without this fetcher wont include cookies into request
+                   "credentials" "include"
+                  }
+                  attr-to-test ["method" "body" "headers" "credentials"]
+                ]
+                (doseq [k attr-to-test]
+                  (do-asserts [:= (get actual k) (get expected k)]))
+                (get-promise-and-resolve "foo")))
 
-                                        ; without this fetcher wont include cookies into request
-                                        "credentials" "include"
-                                        }
-                             attr-to-test ["method" "body" "headers" "credentials"] 
-                             ]
-                         (doseq [k attr-to-test]
-                           (is (= (get actual k) (get expected k)))))
-                       (get-promise-and-resolve "foo"))] 
-           (is (not (nil? js/fetch)))
+(defn fetch-fake-network-error [url args]
+  (do-asserts [:= "http://foo.com" url])
+  (get-promise-and-reject "error"))
+
+(specs "Test fetch-json helper"
+      { "t/fetch wrapper passes params correctly to js/fetch and call success callback"
+       (fn [done]
            (t/fetch-json :url "http://foo.com"
                          :method "GET"
                          :headers {"Content-Type" "text/json"}
                          :mode "no-cors"
                          :body {:foo "bar"}
                          :on-error   (fn [err]
-                                       (is false "should not call error")
+                                       (do-asserts [:falsy?  "should not call error"])
                                        (done))
                          :on-success (fn [data]
-                                       (is (= data  {:data "foo" :status 200 :ok true }))
+                                       (do-asserts [:= data  {:data "foo" :status 200 :ok true }])
                                        (done))
-                         )))))
+                         :fetch-fn fetch-fake-1
+                         ))
+
+       "check that t/fetch handles network error correctly"
+       (fn [done]
+         (t/fetch-json :url "http://foo.com"
+                       :on-error (fn [err]
+                                   (do-asserts [:= err {:data "error", :type :network-error}])
+                                   (done))
+                       :fetch-fn fetch-fake-network-error)
+         )})
 
 
-
-(deftest test-fetch-wrapper-handler
-   (testing "check that t/fetch handles network error correctly"
-     (async done
-         (with-redefs
-           [js/fetch (fn [url args]
-                       (is (= "http://foo.com" url))
-                       (get-promise-and-reject "error"))
-           ]
-
-           (is (not (nil? js/fetch)))
-           (t/fetch-json :url "http://foo.com"
-                         :on-error (fn [err]
-                                     (is (= err {:data "error", :type :network-error}))
-                                     (done)))))))
-
-
-(println
- "fetch_test 
-----------------------------------")
-(run-tests)

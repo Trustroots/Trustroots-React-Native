@@ -3,16 +3,11 @@
             [schema.core :as s]
             [trustroots.domain.main :as main]))
 
-(specs
-    { "Test schema and database"
-     {
+(specs "Test schema and database"
+     { "Default schema should be valid"
+       [:nil? (s/check main/schema main/app-db)]
 
-      "Default schema should be valid"
-      [:nil? (s/check main/schema main/app-db)]
-
-      }
-     }
-  )
+      })
 
 
 ;(deftest db-test

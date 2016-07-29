@@ -1,23 +1,23 @@
 (ns trustroots.api
   (:require
     [trustroots.helpers :refer [log info debug]]
-    [trustroots.fetch :refer [fetch-json]]
+    [trustroots.fetch :as f :refer [fetch-json]]
     [re-frame.core :refer [dispatch]]
   ))
 
 ; Api call
 ; ----------------------------------------------------------------------------
 
-(defn signin [& {:keys [user on-success on-invalid-credentials on-network-error]}]
+(defn signin [& {:keys [user on-success on-invalid-credentials on-network-error fetch-fn]
+                 :or [fetch-fn f/fetch-json]
+                 }]
   "Credentials schema is
   {
       username (string): Username or email. ,
       password (string): Password
   }.
   On succesful request return object that contains user data and autehtication cookie."
-  (let [
-        ]
-    (fetch-json
+  (fetch-fn
      :method "POST"
      :endpoint :singin
      :body user
@@ -26,5 +26,4 @@
                    (if (= :network-error (:type err))
                      (on-network-error err)
                      (on-invalid-credentials err)))
-    )))
-
+    ))
