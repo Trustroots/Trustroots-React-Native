@@ -48,6 +48,13 @@
     (info app-db)
     app-db))
 
+
+(register-handler-for
+ :set-service
+ (fn [db service value]
+   (assoc-in db [:services service] value)))
+
+
 ;; Navigation handlers
 ;; -------------------------------------------------------------
 
@@ -79,7 +86,6 @@
         (auth/set-user! db))))
 
 
-
 ;; Authentication handlers
 ;; -------------------------------------------------------------
 
@@ -91,14 +97,21 @@
 (register-handler-for
   :login
   (fn [db user-pwd]
+    (let [sign-in api/signin]
+      (sign-in :user {:username (:user user-pwd) :password (:pwd user-pwd)}
 
-    ;; TODO add actual autentication
-    (dispatch [:auth-success (:user user-pwd)])
+                :on-success (fn [user] (dispatch [:auth-success user] ))
 
-    (-> db
-        (auth/set-in-progress! true)
-        (auth/set-user!        nil)
-        (auth/set-error!       nil))))
+                :on-invalid-credentials
+                #(dispatch [:auth-fail ])
+
+                :on-network-error
+                #(dispatch [:auth-fail ]))
+
+      (-> db
+          (auth/set-in-progress! true)
+          (auth/set-user!        nil)
+          (auth/set-error!       nil)))))
 
 
 (register-handler-for
