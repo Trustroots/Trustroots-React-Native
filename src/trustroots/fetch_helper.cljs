@@ -36,9 +36,9 @@
 
 (defn fetch-json [& {:keys [url endpoint headers method body on-success on-error fetch-fn] }]
   "Helper for JSON rest api request"
-  (let [react-fetch    ;(if (nil? fetch-fn)
+  (let [react-fetch    (if (nil? fetch-fn)
                          js/fetch
-                        ; fetch-fn)
+                         fetch-fn)
         req-url        (if (nil? endpoint)
                          url
                          (get-url endpoint))

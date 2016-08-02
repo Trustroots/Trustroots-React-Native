@@ -1,7 +1,7 @@
 (ns trustroots.fetch-test
   (:require
-   [trustroots.test-helper :refer [specs expect do-asserts]]
-   [trustroots.fetch :as t]))
+   [trustroots.test-helper :refer [specs expect do-asserts should]]
+   [trustroots.fetch-helper :as t]))
 
 ; See here ho fetch should work in react native
 ; https://developer.mozilla.org/en-US/docs/Web/API/Request
@@ -24,7 +24,7 @@
   (do-asserts [:= "http://foo.com" url])
   (let [actual (js->clj args)
         expected  {"method"  "GET"
-                   "headers" {"Content-Type" "text/json"}
+                   "headers" {"Content-Type" "this should override default" "Accept" "application/json"}
                    "body"    "{\"foo\":\"bar\"}"
                    ; without this fetcher wont include cookies into request
                    "credentials" "include"
@@ -32,7 +32,7 @@
                   attr-to-test ["method" "body" "headers" "credentials"]
                 ]
                 (doseq [k attr-to-test]
-                  (do-asserts [:= (get actual k) (get expected k)]))
+                  (should = (get actual k) (get expected k) ))
                 (get-promise-and-resolve "foo")))
 
 (defn fetch-fake-network-error [url args]
@@ -44,7 +44,7 @@
        (fn [done]
            (t/fetch-json :url "http://foo.com"
                          :method "GET"
-                         :headers {"Content-Type" "text/json"}
+                         :headers {"Content-Type" "this should override default"}
                          :mode "no-cors"
                          :body {:foo "bar"}
                          :on-error   (fn [err]

@@ -2,6 +2,10 @@
   (:require [latte.chai :as c])
   )
 
+(def chai-assert (.-assert (js/require "chai")))
+(defn assert-fail [msg]
+  (.isOk chai-assert false msg))
+
 (comment 
  Usage example
 
@@ -35,6 +39,27 @@
     (apply value-or-fn nil)
     value-or-fn
   ))
+
+(defn get-name [op]
+  (condp = op
+    = "="
+    not "not"
+    not= "not="
+    < "<"
+    > ">"
+    <= "<="
+    >= ">="
+
+    "[op name not found]"
+    )
+  )
+
+(defn should [op & args]
+  (if (apply op args)
+    (expect true :to.be.ok) ;passes
+    (let [op-name (get-name op)]
+      (assert-fail
+       (str "(" (clojure.string/join " " (concat [ op-name ] (map str args))) ")")))))
 
 (defmulti  apply-fn (fn [type value] type))
 (defmethod apply-fn :before         [t f] (js/before f))
