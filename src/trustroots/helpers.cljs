@@ -6,12 +6,12 @@
 
 (defn set-info! [] (reset! debug-level :info))
 
-(defn log [thing]
+(defn log [& thing]
   "Log to console, if goog.DEBUG is true"
   (when goog.DEBUG
-    (println thing))
+    (apply println thing)
   ;;TODO write to device logs
-  )
+  ))
 
 (defn info [thing]
   "Log to console, if goog.DEBUG is true and log level is :info"
