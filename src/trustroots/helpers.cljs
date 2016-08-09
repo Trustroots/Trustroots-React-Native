@@ -13,6 +13,9 @@
   ;;TODO write to device logs
   ))
 
+(defn get-ref [component key]
+  ((js->clj (.-refs component)) key))
+
 (defn info [thing]
   "Log to console, if goog.DEBUG is true and log level is :info"
   (when (and goog.DEBUG
@@ -27,3 +30,7 @@
               (= :debug @debug-level)
               (= :info @debug-level)))
     (println thing)))
+
+(defn dir [thing]
+  "console.dir"
+  (.dir js/console thing))
