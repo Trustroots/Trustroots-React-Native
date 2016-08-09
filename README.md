@@ -16,8 +16,7 @@ Stack
   - Re-frame
   - Prismatic/schema
 - For testing:
-  - cljs.test
-
+  - mocha.js and chai.js (with a spec wrapper helper in tests)
 
 Configure development enviroment
 --------------------------------
@@ -84,7 +83,7 @@ TODO: use [Enzyme to mock React Native]( https://github.com/airbnb/enzyme/blob/m
 
 
 Troubleshooting
----------------
+------------------
 
 ### Problem: React packages gives errors relating missing platform and UI does not update as it should.
 
@@ -116,7 +115,6 @@ You should get more informative error message.
 Solution 2: Open develper menu by keyboard short cut `Command ⌘ + M` and click "Enable remote debuging" in Android emulator. This opens browser. Open console in browser - it often gives you better idea what is happening.
 
 Solution 3: Check Android logs using command `adb logcat`. (You probable get insane amount of log entiries, and thus you might want to clear log by `adb logcat -c`
-
 
 ## License
 

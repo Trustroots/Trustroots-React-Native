@@ -15,7 +15,11 @@
     "react-native-vector-icons": "^2.0.3"
   },
   "devDependencies": {
+    "chai": "^3.5.0",
     "enzyme": "^2.4.1",
+    "fetch-polyfill": "^0.8.2",
+    "mocha": "^2.5.3",
+    "node-fetch": "^1.5.3",
     "re-natal": "^0.2.38",
     "react-native-cli": "^1.0.0",
     "react-native-mock": "^0.2.5"

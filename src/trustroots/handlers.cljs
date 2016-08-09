@@ -3,7 +3,7 @@
     [clojure.walk :refer [keywordize-keys]]
     [re-frame.core :refer [register-handler after dispatch]]
     [schema.core :as   s :include-macros true]
-    [trustroots.domain.main :refer [app-db schema]]
+    [trustroots.domain.main :as main :refer [app-db schema]]
     [trustroots.helpers :refer [log info debug]]
     [trustroots.db :as db]
     [trustroots.domain.auth :as auth]
@@ -48,6 +48,13 @@
     (info app-db)
     app-db))
 
+
+(register-handler-for
+ :set-service
+ (fn [db service value]
+   (assoc-in db [:services service] value)))
+
+
 ;; Navigation handlers
 ;; -------------------------------------------------------------
 
@@ -79,7 +86,6 @@
         (auth/set-user! db))))
 
 
-
 ;; Authentication handlers
 ;; -------------------------------------------------------------
 
@@ -91,14 +97,23 @@
 (register-handler-for
   :login
   (fn [db user-pwd]
+    (let [sign-in api/signin]
+      (sign-in :user {:username (:user user-pwd) :password (:pwd user-pwd)}
+               :on-success (fn [user] (dispatch [:auth-success user] ))
+               :on-error
+               #(condp = (:type %)
+                   :invalid-credentials (dispatch [:auth-fail])
+                   :network-error (dispatch [:check-off-line])
+                   (dispatch [:unknown-error])))
 
-    ;; TODO add actual autentication
-    (dispatch [:auth-success (:user user-pwd)])
+      (-> db
+          (auth/set-in-progress! true)
+          (auth/set-user!        nil)
+          (auth/set-error!       nil)))))
 
-    (-> db
-        (auth/set-in-progress! true)
-        (auth/set-user!        nil)
-        (auth/set-error!       nil))))
+(register-handler-for
+  :set-off-line
+  main/set-offline!)
 
 
 (register-handler-for
@@ -119,3 +134,18 @@
         (auth/set-in-progress! false)
         (auth/set-user!        user)
         (auth/set-error!       nil))))
+
+(def react-native (js/require "react-native"))
+
+;; Hardware related event listeners
+;; ----------------------------------
+
+(register-handler-for
+ :initialize-hardware
+ (fn [db _]
+   (-> react-native
+       (.-NetInfo)
+       (.-isConnected)
+       (.fetch)
+       (.done #(dispatch [:set-off-line (not %)])))
+   db))

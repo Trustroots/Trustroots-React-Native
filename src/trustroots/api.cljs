@@ -1,31 +1,42 @@
 (ns trustroots.api
   (:require
-    [re-frame.core :refer [dispatch]]))
+    [trustroots.helpers :refer [log info debug]]
+    [trustroots.fetch-helper :as f :refer [fetch-json]]
+    [re-frame.core :refer [dispatch]]
+  ))
 
-(def baseurl "https://www.trustroots.org/api")
-(def url_map
-  {
-       :signin "auth/signin"
-  })
+; Api call
+; ----------------------------------------------------------------------------
 
-(defn get-url [endpoint]
-  (str baseurl (endpoint url_map)))
-
-; Api calls
-; -----------------------------------------------------------------------
-
-(defn signin [{user :user
-              on-success :on-success
-              on-invalid-credentials :on-invalid-credentials }]
+(defn signin [& {:keys [user on-success on-error fetch-fn]
+                 :or [fetch-fn f/fetch-json]
+                 }]
   "Credentials schema is
   {
       username (string): Username or email. ,
       password (string): Password
   }.
   On succesful request return object that contains user data and autehtication cookie."
-  (let [
-         url (get-url :signin)
-       ]
-    ""
-    ))
+  (let [fetch (if (nil? fetch-fn) f/fetch-json fetch-fn)]
+    (fetch
+     :method "POST"
+     :endpoint :sign-in
+     :body user
+     :on-success on-success
+     :on-error   (fn [err]
+                   (on-error
+                    (if (= 400 (:status err))
+                      (assoc err :type :invalid-credentials)
+                      err))))))
 
+(defn messages [& {:keys [on-success on-error fetch-fn]
+                 :or [fetch-fn f/fetch-json]
+                 }]
+   "On succesful request return object that contains user data and autehtication cookie."
+  (let [fetch (if (nil? fetch-fn) f/fetch-json fetch-fn)]
+    (fetch
+     :method "GET"
+     :endpoint :messages
+     :on-success on-success
+     :on-error   on-error
+     )))

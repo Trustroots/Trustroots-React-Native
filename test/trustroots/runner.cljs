@@ -1,16 +1,18 @@
-(js/require "react-native-mock/mock")
-(js/console.log  "global.__DEV__ = true")
-
-(js/eval  "GLOBAL.__DEV__ = true")
-
 (ns trustroots.runner
-  (:require [doo.runner :refer-macros [doo-tests]]
+  (:require [trustroots.test-helper :as th]
             [trustroots.db-test]
             [trustroots.handler-test]
+            [trustroots.api-test]
+            [trustroots.fetch-test]
             ))
 
-(doo-tests
-  'trustroots.db-test
-  'trustroots.handler-test
-)
+(enable-console-print!)
+
+(defn set-entry-point!
+  "Sets the function to be run when starting the script"
+  [f]
+  {:pre [(fn? f)]}
+  (set! *main-cli-fn* f))
+
+(set-entry-point! (fn [] (println "Run tests")))
 

@@ -10,9 +10,19 @@
 
 require("babel-polyfill");
 require("react-native-mock/mock");
-
+require("mocha")
+var expect = require("chai").expect
+var fetch = require("node-fetch");
+global.fetch = fetch;
+describe("Ensure that mocha and chai are up and running",
+         function() {it("This should pass",
+                        function(){
+                            expect(true).to.be.ok;
+                        })});
 // Execute test
 require("./target/test/test");
 
-process.exit()
+// process.exit()
+
+
 

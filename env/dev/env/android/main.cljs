@@ -1,4 +1,4 @@
- (ns ^:figwheel-no-load env.android.main
+(ns ^:figwheel-no-load env.android.main
   (:require [reagent.core :as r]
             [trustroots.android.core :as core]
             [figwheel.client :as figwheel :include-macros true]))

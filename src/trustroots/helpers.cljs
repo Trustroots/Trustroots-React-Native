@@ -1,17 +1,17 @@
 (ns trustroots.helpers)
 
-(defonce debug-level (atom :info))
+(defonce debug-level (atom :debug))
 
 (defn set-degug! [] (reset! debug-level :debug))
 
 (defn set-info! [] (reset! debug-level :info))
 
-(defn log [thing]
+(defn log [& thing]
   "Log to console, if goog.DEBUG is true"
   (when goog.DEBUG
-    (println thing))
+    (apply println thing)
   ;;TODO write to device logs
-  )
+  ))
 
 (defn info [thing]
   "Log to console, if goog.DEBUG is true and log level is :info"
@@ -23,7 +23,7 @@
 (defn debug [thing]
   "Log to console, if goog.DEBUG is true and log level is :info of :debug"
   (when (and goog.DEBUG
-             (= :debug @debug-level)
-             (= :info @debug-level))
+             (or
+              (= :debug @debug-level)
+              (= :info @debug-level)))
     (println thing)))
-

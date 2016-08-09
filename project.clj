@@ -6,12 +6,12 @@
             :dependencies [[org.clojure/clojure "1.8.0"]
                            ;[org.clojure/clojurescript "1.8.51"]
                            [org.clojure/clojurescript "1.9.89"]
-
                            [reagent "0.6.0-rc" :exclusions [cljsjs/react cljsjs/react-dom cljsjs/react-dom-server]]
                            [re-frame  "0.7.0"]
                            [cljs-ajax "0.5.3"]
                            [prismatic/schema "1.1.3"]
-                           [lein-doo "0.1.7"]]
+                           [chai-latte "0.2.0"]
+                           ]
             :plugins [[lein-cljsbuild "1.1.3"]
                       [lein-figwheel "0.5.0-6"]]
             :clean-targets ["target/" "index.ios.js" "index.android.js"]
@@ -25,16 +25,14 @@
             ;; anything having a something to do with device is not possible.
             :hooks [leiningen.cljsbuild]
             :cljsbuild { :test-commands
-                                   {"unit" ["node" "run-test.js"]}
-                        :builds   {:test {:source-paths ["test" "src" "env/test"]
-                                          :notify-command ["node" "run-test.js"]
+                        {"unit" ["node" "./node_modules/mocha/bin/mocha" "./run-test.js"]}
+                        :builds   {:test {:source-paths ["test" "src"]
+                                          :notify-command ["node" "./node_modules/mocha/bin/mocha" "./run-test.js" "--\n echo"]
                                           :compiler     {
                                                            :output-to     "target/test/test.js"
                                                            :main          "trustroots.runner"
                                                            :target        :nodejs
-                                                           :closure-defines {"goog.DEBUG" true
-                                                                             "GLOBAL.__DEV__"    true
-                                                                             }
+                                                           :closure-defines {"goog.DEBUG" true }
                                                            :output-dir    "target/test"
                                                            :optimizations :none}}}}
 
