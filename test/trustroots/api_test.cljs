@@ -20,11 +20,8 @@
 
                          :on-success (fn [user](do-asserts [:not-nil? user]) (done))
 
-                         :on-invalid-credentials
-                         (partial test-failed-because "It should not hava called on-invalid-credentials for successful response" done)
-
-                         :on-network-error
-                         (partial test-failed-because "It should not hava called on-network-error for successful response" done)
+                         :on-error
+                         (partial test-failed-because "It should not hava called on-error for successful response" done)
 
                          :fetch-fn fetch-fn
                          ))

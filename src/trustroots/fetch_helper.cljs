@@ -8,6 +8,7 @@
 (def url_map
   {
    :sign-in "auth/signin"
+   :messages "messages"
    })
 
 (defn get-url [endpoint]
@@ -25,10 +26,14 @@
                (if (not (nil? res))
                  (let [ok (.-ok res)
                        status (.-status res)
+                       error-type (cond
+                                    ok nil
+                                    (= status 403) :unauthorized
+                                   :else :http-error)
                        handle-data (fn [data]
                                      (if ok
                                        (on-success {:data data :status status :ok ok})
-                                       (on-error   {:data data :status status :type :http-error})))
+                                       (on-error   {:data data :status status :type error-type})))
                        ]
                    (-> (.json res)
                        (.then #(do (log %) %))

@@ -8,7 +8,7 @@
 ; Api call
 ; ----------------------------------------------------------------------------
 
-(defn signin [& {:keys [user on-success on-invalid-credentials on-network-error fetch-fn]
+(defn signin [& {:keys [user on-success on-error fetch-fn]
                  :or [fetch-fn f/fetch-json]
                  }]
   "Credentials schema is
@@ -24,7 +24,19 @@
      :body user
      :on-success on-success
      :on-error   (fn [err]
-                   (if (= :network-error (:type err))
-                     (on-network-error err)
-                     (on-invalid-credentials err)))
-    )))
+                   (on-error
+                    (if (= 400 (:status err))
+                      (assoc err :type :invalid-credentials)
+                      err))))))
+
+(defn messages [& {:keys [on-success on-error fetch-fn]
+                 :or [fetch-fn f/fetch-json]
+                 }]
+   "On succesful request return object that contains user data and autehtication cookie."
+  (let [fetch (if (nil? fetch-fn) f/fetch-json fetch-fn)]
+    (fetch
+     :method "GET"
+     :endpoint :messages
+     :on-success on-success
+     :on-error   on-error
+     )))

@@ -63,5 +63,6 @@
 
 
 (defn init []
-      (dispatch-sync [:initialize-db])
-      (.registerComponent app-registry "trustroots" #(r/reactify-component app-root)))
+  (dispatch-sync [:initialize-db])
+  (dispatch [:initialize-hardware])
+  (.registerComponent app-registry "trustroots" #(r/reactify-component app-root)))

@@ -1,6 +1,6 @@
 (ns trustroots.helpers)
 
-(defonce debug-level (atom :info))
+(defonce debug-level (atom :debug))
 
 (defn set-degug! [] (reset! debug-level :debug))
 
@@ -23,6 +23,7 @@
 (defn debug [thing]
   "Log to console, if goog.DEBUG is true and log level is :info of :debug"
   (when (and goog.DEBUG
-             (= :debug @debug-level)
-             (= :info @debug-level))
+             (or
+              (= :debug @debug-level)
+              (= :info @debug-level)))
     (println thing)))
