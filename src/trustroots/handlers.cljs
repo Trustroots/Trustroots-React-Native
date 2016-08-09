@@ -67,26 +67,21 @@
 ;; -------------------------------------------------------------
 
 (register-handler-for
-  :load-from-db
-  (fn [db model-type]
-    (db/load model-type
-             (fn [response]
-               (let [handler-name
-                     (->> (name model-type)
-                          (str "load-from-db-")
-                          (keyword))]
-                 (dispatch [handler-name response]))))
-    db))
+  :set-db
+  (fn [_ new-state] new-state))
 
 (register-handler-for
-  :load-from-db-user
-  (fn [db user-json]
-    (-> (js->clj user-json)
-        (keywordize-keys)
-        (auth/set-user! db))))
+  :load-db
+  (fn [db _]
+    (db/load #(dispatch :set-db %1))))
 
+(register-handler-for
+  :save-db
+  (fn [db _]
+    (db/save! db)
+    db))
 
-;; Authentication handlers
+;; db handlers
 ;; -------------------------------------------------------------
 
 (register-handler-for
@@ -128,8 +123,9 @@
 (register-handler-for
   :auth-success
   (fn [db user]
+    (dispatch [:save-db])
     (when (= (:page db) "login")
-      (dispatch     [:set-page "main"]))
+      (dispatch [:set-page "main"]))
     (-> db
         (auth/set-in-progress! false)
         (auth/set-user!        user)
