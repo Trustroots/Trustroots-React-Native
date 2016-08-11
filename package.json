@@ -1,9 +1,18 @@
 {
-  "name": "trustroots",
+  "name": "trustroots-react",
   "version": "0.0.1",
+  "author": "https://www.trustroots.org/foundation",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Trustroots/Trustroots-React-Native"
+  },
+  "bugs": {
+    "url": "https://github.com/Trustroots/Trustroots-React-Native/issues"
+  },
   "scripts": {
-    "start": "node_modules/react-native/packager/packager.sh --nonPersistent"
+    "start": "node_modules/react-native/packager/packager.sh --nonPersistent",
+    "test": "lein cljsbuild test"
   },
   "dependencies": {
     "babel-polyfill": "^6.9.1",
