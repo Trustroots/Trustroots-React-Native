@@ -118,4 +118,4 @@ Solution 3: Check Android logs using command `adb logcat`. (You probable get ins
 
 ## License
 
-[MIT](LICENSE.md)
+[MIT](LICENSE)
