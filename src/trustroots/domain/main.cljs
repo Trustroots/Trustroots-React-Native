@@ -12,6 +12,7 @@
           :off-line s/Bool
           :page     s/Str
           :greeting s/Str
+          :network-state s/Any 
           }))
 
 ;; initial state of app-db
@@ -21,6 +22,7 @@
           :off-line   true
           :page       "main"
           :greeting   "Hello Clojure in iOS and Android!"
+          :network-state :not-initialized
           }))
 
 (defn set-offline! [db state]

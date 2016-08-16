@@ -68,17 +68,31 @@
 
 (register-handler-for
   :set-db
-  (fn [_ new-state] new-state))
+  (fn [db new-state]
+    (if-let [problems (s/check schema new-state)]
+      (do
+        (log problems)
+        db)
+      new-state)))
+
+
+(register-handler-for
+ :storage-error
+ (fn [db err-event error]
+   (log error)
+   ; currently do nothing error handling should be here
+   db))
 
 (register-handler-for
   :load-db
   (fn [db _]
-    (db/load #(dispatch :set-db %1))))
+    (db/load #(dispatch [:set-db %1]) #(dispatch [:storage-error :load-db %1]))
+    db))
 
 (register-handler-for
   :save-db
   (fn [db _]
-    (db/save! db)
+    (db/save! db #(dispatch [:storage-error :save-db %1]))
     db))
 
 ;; db handlers
@@ -107,11 +121,6 @@
           (auth/set-error!       nil)))))
 
 (register-handler-for
-  :set-off-line
-  main/set-offline!)
-
-
-(register-handler-for
   :auth-fail
   (fn [db error]
     (-> db
@@ -131,17 +140,34 @@
         (auth/set-user!        user)
         (auth/set-error!       nil))))
 
+(register-handler-for
+ :set-off-line
+ (fn [db mode]
+   (assoc db :network-state mode)))
+
 (def react-native (js/require "react-native"))
 
 ;; Hardware related event listeners
 ;; ----------------------------------
 
+(defn check-nework-state []
+  (-> react-native
+      (.-NetInfo)
+      (.-isConnected)
+      (.fetch)
+      (.done #(dispatch [:set-off-line (not %)])))
+  )
+
 (register-handler-for
  :initialize-hardware
  (fn [db _]
-   (-> react-native
-       (.-NetInfo)
-       (.-isConnected)
-       (.fetch)
-       (.done #(dispatch [:set-off-line (not %)])))
+   ;; register event listeners
+   ;; check once
+   ;; Currently any way to check NetInfo does not work
+   ;; This is left here as warning
+   ;(js/setTimeout
+   ;    check-nework-state
+   ;    15000)
    db))
+
+

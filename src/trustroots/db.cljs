@@ -9,8 +9,10 @@
 (defn save! [db on-error]
   (->
    AsyncStorage
-   (.setItem '@Trustroots:db' (clj->js db))
-   (.then debug)
+   (.setItem "@Trustroots:db" (js/JSON.stringify (clj->js db)))
+   (.then (fn [result]
+            (log (str "load done" result))
+            debug))
    (.catch on-error)))
 
 (defn load [on-success on-error]

@@ -11,7 +11,8 @@
     "react-native-vector-icons/MaterialIcons",
     "react-native-material-design",
     "react-native-store",
-    "moment"],
+    "moment"
+  ],
   "imageDirs": [
     "images"
   ]
