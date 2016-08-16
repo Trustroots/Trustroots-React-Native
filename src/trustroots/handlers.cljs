@@ -101,6 +101,7 @@
 (register-handler-for
   :logout
   (fn [db _]
+    (dispatch [:save-db])
     (auth/set-user! db nil)))
 
 (register-handler-for

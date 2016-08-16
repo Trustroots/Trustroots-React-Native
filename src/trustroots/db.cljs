@@ -18,7 +18,10 @@
 (defn load [on-success on-error]
   (->
    AsyncStorage
-   (.getItem '@Trustroots:db')
-   (.then js->clj)
+   (.getItem "@Trustroots:db")
+   (.then (fn [item]
+            (log (str "JSON: " item))
+            (->  (js/JSON.parse item)
+                 (js->clj :keywordize-keys true))))
    (.then on-success)
    (.catch on-error )))
