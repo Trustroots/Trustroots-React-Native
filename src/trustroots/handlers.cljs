@@ -162,7 +162,7 @@
                                            (dispatch :messages/fetch-fail))
                  (dispatch [:unknown-error])))
 
-     (assoc db :messages/is-in-progress true))))
+     db)))
 
 (register-handler-for
  :messages/fetch-success
