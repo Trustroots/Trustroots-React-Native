@@ -31,6 +31,12 @@
   :get-greeting
   (fn [db _] (get @db :greeting)))
 
+;; Messages
+;; -------------------------------------------------------------
+(register-sub-for
+  :get-messages
+  (fn [db _] (get @db :message/threads)))
+
 ;; Navigation handlers
 ;; -------------------------------------------------------------
 
