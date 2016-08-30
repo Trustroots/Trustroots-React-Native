@@ -146,6 +146,37 @@
  (fn [db mode]
    (assoc db :network-state mode)))
 
+;; get message threads
+
+(register-handler-for
+ :messages/fetch
+ (fn [db user-pwd]
+   (let [get-messages api/messages]
+     (get-messages
+      :on-success (fn [data]
+                    (dispatch [:messages/fetch-success (:data data)] ))
+              :on-error
+              #(condp = (:type %)
+                 :invalid-credentials (dispatch [:logout])
+                 :network-error       (do (dispatch [:check-off-line])
+                                           (dispatch :messages/fetch-fail))
+                 (dispatch [:unknown-error])))
+
+     (assoc db :messages/is-in-progress true))))
+
+(register-handler-for
+ :messages/fetch-success
+ (fn [db data]
+   (log data)
+
+   (assoc db :message/threads data)))
+
+(register-handler-for
+ :messages/fetch-fail
+ (fn [db user-pwd] db))
+
+
+
 (def react-native (js/require "react-native"))
 
 ;; Hardware related event listeners
@@ -171,4 +202,4 @@
    ;    15000)
    db))
 
-
+;; (re-frame.core/dispatch [:set-page "messages"] )

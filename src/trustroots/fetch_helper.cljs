@@ -36,6 +36,8 @@
                                        (on-error   {:data data :status status :type error-type})))
                        ]
                    (-> (.json res)
+                       (.then js->clj)
+                       (.then keywordize-keys)
                        (.then #(do (log %) %))
                        (.then handle-data))))))))
 
