@@ -41,6 +41,18 @@
 (def card-media        (r/adapt-react-class (.-Card.Media      js/MaterialDesign)))
 (def card-actions      (r/adapt-react-class (.-Card.Actions     js/MaterialDesign)))
 
+(def avatar            (r/adapt-react-class (.-Avatar          js/MaterialDesign)))
+
+(defn image-component [image-url]
+  (r/as-element
+   [image
+    {:source {:uri image-url}}]))
+
+(defn trustroots-avatar [image-url]
+  (if image-url
+    [avatar {:image (image-component image-url) :size 50 :backgroundColor "paperLime"}]
+    [avatar {:icon "person" :size 50 :backgroundColor "paperLime"}])
+  )
 
 (def button            (r/adapt-react-class (.-Button          js/MaterialDesign)))
 (def drawer-layout     (r/adapt-react-class (.-Drawer          js/MaterialDesign)))

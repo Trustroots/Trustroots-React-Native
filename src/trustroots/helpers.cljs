@@ -34,3 +34,11 @@
 (defn dir [thing]
   "console.dir"
   (.dir js/console thing))
+
+(def moment (js/require "moment"))
+
+(defn to-now [timeString]
+  (->
+   (moment timeString)
+   (.fromNow )))
+
