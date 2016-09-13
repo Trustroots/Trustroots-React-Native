@@ -7,6 +7,7 @@
             [trustroots.handlers]
             [trustroots.subs]
             [trustroots.shared.pages.inbox :refer [inbox-page]]
+            [trustroots.shared.pages.conversation :refer [conversation-page]]
             [trustroots.shared.pages.login :refer [login-page]]
             ))
 
@@ -49,8 +50,9 @@
 ;;                   :on-icon-press (fn [_]
 ;;                                 (.openDrawer @drawer))}]
       (case (str @tab)
-        ":inbox"     [inbox-page  {:style (get-in s/styles [:pages :main])} ]
-        ":login"     [login-page {:style (get-in s/styles [:pages :login])} ])])))
+        ":inbox"        [inbox-page  {:style (get-in s/styles [:pages :main])} ]
+        ":conversation" [conversation-page  {:style (get-in s/styles [:pages :main])} ]
+        ":login"        [login-page {:style (get-in s/styles [:pages :login])} ])])))
 
 
 (defn app-root []

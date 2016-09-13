@@ -64,3 +64,8 @@
           true                      {:in-progress false
                                      :succeed false})))
 
+(register-sub-for
+ :current-conversation
+ (fn [db _]
+   (let [selected-user (get @db :message/current-conversation)]
+     (get-in @db [:message/conversation-with selected-user]))))

@@ -36,8 +36,11 @@
                                        (on-error   {:data data :status status :type error-type})))
                        ]
                    (-> (.json res)
-                       (.then js->clj)
-                       (.then keywordize-keys)
+                       (.then #(js->clj %1 {:keywordize-keys true}))
+                       (.then #(if
+                                 (vector? %1)
+                                 (vec (map clojure.walk/keywordize-keys %1))
+                                 %1))
                        (.then #(do (log %) %))
                        (.then handle-data))))))))
 
