@@ -10,10 +10,16 @@
   (merge auth/schema
          {
           :off-line s/Bool
-          :page     s/Str
-          :greeting s/Str
+          :page     (s/enum :login :inbox :conversation)
           :network-state s/Any
-          :message/threads [s/Any]
+          ;; user inbox from /api/messages
+          :message/inbox [s/Any]
+          :message/conversation-with
+          {
+            ;user-id | Messages (from /api/messages/{user-id})
+            (s/maybe s/Str) [s/Any]
+           }
+          :message/current-conversation (s/maybe s/Str)
           :request-in-progress [s/Keyword]
           }))
 
@@ -22,10 +28,11 @@
   (merge auth/app-db
          {
           :off-line   true
-          :page       "main"
-          :greeting   "Hello Clojure in iOS and Android!"
+          :page       :inbox
           :network-state :not-initialized
-          :message/threads []
+          :message/inbox []
+          :message/conversation-with {}
+          :message/current-conversation nil
           :request-in-progress []
           }))
 

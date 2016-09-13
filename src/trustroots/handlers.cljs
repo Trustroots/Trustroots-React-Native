@@ -135,7 +135,7 @@
   (fn [db user]
     (dispatch [:save-db])
     (when (= (:page db) "login")
-      (dispatch [:set-page "main"]))
+      (dispatch [:set-page :inbox]))
     (-> db
         (auth/set-in-progress! false)
         (auth/set-user!        user)
@@ -146,36 +146,73 @@
  (fn [db mode]
    (assoc db :network-state mode)))
 
-;; get message threads
+;; get inbox
 
 (register-handler-for
- :messages/fetch
+ :inbox/fetch
  (fn [db user-pwd]
-   (let [get-messages api/messages]
+   (let [get-messages api/inbox]
      (get-messages
       :on-success (fn [data]
-                    (dispatch [:messages/fetch-success (:data data)] ))
+                    (dispatch [:inbox/fetch-success (:data data)] ))
               :on-error
               #(condp = (:type %)
                  :invalid-credentials (dispatch [:logout])
                  :network-error       (do (dispatch [:check-off-line])
-                                           (dispatch :messages/fetch-fail))
+                                           (dispatch :inbox/fetch-fail))
                  (dispatch [:unknown-error])))
 
      db)))
 
 (register-handler-for
- :messages/fetch-success
+ :inbox/fetch-success
  (fn [db data]
    (log data)
 
-   (assoc db :message/threads data)))
+   (assoc db :message/inbox data)))
 
 (register-handler-for
- :messages/fetch-fail
- (fn [db user-pwd] db))
+ :inbox/fetch-fail
+ (fn [db data] db))
 
 
+;; Get one message thread (=converstion)
+;; ----------------------
+
+(register-handler-for
+ :conversation/fetch
+ (fn [db user-id]
+   (let [get-messages (partial api/conversation-with user-id)]
+     (get-messages
+      :on-success (fn [data]
+                    (dispatch [:conversation/fetch-success user-id (:data data)] ))
+      :on-error
+      #(condp = (:type %)
+         :invalid-credentials (dispatch [:logout])
+         :network-error       (do (dispatch [:check-off-line])
+                                  (dispatch [:conversation/fetch-fail user-id] ))
+         (dispatch [:unknown-error])))
+
+     db)))
+
+(register-handler-for
+ :conversation/fetch-success
+ (fn [db user-id data]
+   (log data)
+
+   (assoc-in db [:message/conversation-with user-id] data)))
+
+(register-handler-for
+ :conversation/fetch-fail
+ (fn [db user-id] db))
+
+
+(register-handler-for
+ :show/conversations-with
+ (fn [db user-id]
+   (dispatch [:conversation/fetch user-id])
+   (dispatch [:set-page :conversation])
+   (assoc db :message/current-conversation user-id)))
 
 (def react-native (js/require "react-native"))
 
@@ -202,4 +239,14 @@
    ;    15000)
    db))
 
-;; (re-frame.core/dispatch [:set-page "messages"] )
+(comment 
+
+
+  (re-frame.core/dispatch [:set-page :inbox] )
+
+  (re-frame.core/dispatch [:inbox/fetch])
+
+
+  (re-frame.core/subscribe [:inbox/get] )
+
+)

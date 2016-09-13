@@ -1,4 +1,4 @@
-(ns trustroots.shared.pages.messages
+(ns trustroots.shared.pages.inbox
   (:require [reagent.core :as r :refer [atom]]
             [re-frame.core :refer [subscribe dispatch dispatch-sync]]
             [trustroots.shared.ui :as ui :refer
@@ -71,7 +71,7 @@
     ]
    ]))
 
-(defn messages-page [{style :style}]
+(defn inbox-page [{style :style}]
   (let [messages (subscribe [:inbox/get])]
     (fn []
       [view {:style { :flex-direction "column"

@@ -34,8 +34,8 @@
 ;; Messages
 ;; -------------------------------------------------------------
 (register-sub-for
-  :get-messages
-  (fn [db _] (get @db :message/threads)))
+  :inbox/get
+  (fn [db _] (get @db :message/inbox)))
 
 ;; Navigation handlers
 ;; -------------------------------------------------------------
@@ -45,7 +45,7 @@
   (fn [db _]
     (if (auth/get-user @db)
       (get @db :page)
-      "login" )))
+      :login)))
 
 ;; Authentication/identity subs
 ;; -------------------------------------------------------------

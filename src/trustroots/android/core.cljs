@@ -6,8 +6,7 @@
             [trustroots.android.styles :as s]
             [trustroots.handlers]
             [trustroots.subs]
-            [trustroots.shared.pages.main :refer [main-page]]
-            [trustroots.shared.pages.messages :refer [messages-page]]
+            [trustroots.shared.pages.inbox :refer [inbox-page]]
             [trustroots.shared.pages.login :refer [login-page]]
             ))
 
@@ -49,14 +48,13 @@
 ;;                   :style         (get-in s/styles [:toolbar])
 ;;                   :on-icon-press (fn [_]
 ;;                                 (.openDrawer @drawer))}]
-      (case @tab
-        "main"      [main-page  {:style (get-in s/styles [:pages :main ])} ]
-        "messages"  [messages-page  {:style (get-in s/styles [:pages :main ])} ]
-        "login"     [login-page {:style (get-in s/styles [:pages :login])} ])])))
+      (case (str @tab)
+        ":inbox"     [inbox-page  {:style (get-in s/styles [:pages :main])} ]
+        ":login"     [login-page {:style (get-in s/styles [:pages :login])} ])])))
 
 
 (defn app-root []
-  [ui/navigator {:initial-route   {:name "messages" :index 1}
+  [ui/navigator {:initial-route   {:name ":inbox" :index 1}
                  :style           (get-in s/styles [:app])
                  :configure-scene (fn [_ _]
                                      js/React.Navigator.SceneConfigs.FloatFromBottomAndroid)
