@@ -7,6 +7,8 @@
              [list-view-with-subscription]]
             [trustroots.helpers :refer [log info debug to-now]]))
 
+(def html-view (r/adapt-react-class (get (js->clj (js/require "react-native-htmlview")) "default")))
+
 (defn get-image-url [user]
   (let [source (:avatarSource user)
         id     (:_id user)
@@ -80,14 +82,16 @@
                      :align-items "stretch"}}
        [ui/text "Conversation"]
        (for [message @messages]
-         [text (get-in message [:content])]
+         (do 
+           ^{:key (:_id message)}
+           [html-view {:value (get-in message [:content])}])
          )
        
        [ui/button { :text "Logout"
                     :value "logout"
                     :raised true
                     :on-press #(dispatch [:logout])}]
-      ])))
+      ]))) 
 
 
 
