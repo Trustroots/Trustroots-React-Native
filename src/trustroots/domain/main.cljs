@@ -9,6 +9,9 @@
 (def schema
   (merge auth/schema
          {
+          :services {
+                     :toaster (s/maybe s/Any)
+                     }
           :off-line s/Bool
           :page     (s/enum :login :inbox :conversation)
           :network-state s/Any
@@ -24,9 +27,10 @@
           }))
 
 ;; initial state of app-db
-(def app-db
+(def apps
   (merge auth/app-db
          {
+          :services {:toaster nil}
           :off-line   true
           :page       :inbox
           :network-state :not-initialized

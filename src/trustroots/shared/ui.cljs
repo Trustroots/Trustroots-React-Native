@@ -66,6 +66,10 @@
 ;; typo graphy
 ;; ===================================================================
 
+(defn show-toast [message duration & gravity]
+  (.ToastAndroid.show ReactNative message duration gravity)
+  )
+
 (defn h1 [s]
   [text {:style
            {:font-size 30

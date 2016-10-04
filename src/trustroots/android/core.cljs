@@ -69,4 +69,5 @@
   (dispatch-sync [:initialize-db])
   (dispatch [:initialize-hardware])
   (dispatch [:load-db])
+  (dispatch [:register-service :toaster ui/show-toast])
   (.registerComponent app-registry "trustroots" #(r/reactify-component app-root)))

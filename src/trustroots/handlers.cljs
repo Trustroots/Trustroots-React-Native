@@ -50,9 +50,9 @@
 
 
 (register-handler-for
- :set-service
- (fn [db service value]
-   (assoc-in db [:services service] value)))
+ :register-service
+ (fn [db service-key service]
+   (assoc-in db [:services service-key] service)))
 
 
 ;; Navigation handlers
@@ -113,7 +113,7 @@
                :on-error
                #(condp = (:type %)
                    :invalid-credentials (dispatch [:auth-fail])
-                   :network-error (dispatch [:check-off-line])
+                   :network-error (dispatch [:set-offline true])
                    (dispatch [:unknown-error])))
 
       (-> db
@@ -142,8 +142,12 @@
         (auth/set-error!       nil))))
 
 (register-handler-for
- :set-off-line
+ :set-offline
  (fn [db mode]
+   (when-let [toaster (get-in db [:services :toaster])]
+            (log toaster)
+            (toaster "You are currently offline" 5000)
+            )
    (assoc db :network-state mode)))
 
 ;; get inbox
@@ -158,7 +162,7 @@
               :on-error
               #(condp = (:type %)
                  :invalid-credentials (dispatch [:logout])
-                 :network-error       (do (dispatch [:check-off-line])
+                 :network-error       (do (dispatch [:set-offline true])
                                            (dispatch :inbox/fetch-fail))
                  (dispatch [:unknown-error])))
 
@@ -189,7 +193,7 @@
       :on-error
       #(condp = (:type %)
          :invalid-credentials (dispatch [:logout])
-         :network-error       (do (dispatch [:check-off-line])
+         :network-error       (do (dispatch [:set-offline true])
                                   (dispatch [:conversation/fetch-fail user-id] ))
          (dispatch [:unknown-error])))
 
@@ -219,12 +223,12 @@
 ;; Hardware related event listeners
 ;; ----------------------------------
 
-(defn check-nework-state []
+(defn check-network-state []
   (-> react-native
       (.-NetInfo)
       (.-isConnected)
       (.fetch)
-      (.done #(dispatch [:set-off-line (not %)])))
+      (.done #(dispatch [:set-offline (not %)])))
   )
 
 (register-handler-for
