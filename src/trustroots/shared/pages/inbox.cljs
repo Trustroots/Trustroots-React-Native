@@ -21,6 +21,7 @@
     nil )))
 
 
+
 (defn list-view-item [row]
   (log row)
   (let [excerpt  (get-in row [:message :excerpt])
@@ -31,45 +32,19 @@
         bg-color (if read "white" "#AAAAFF")
         relative-time (to-now (:updated row))
         ]
-  [view {:flex 1 :flex-direction "column"}
-   [ui/card {:style {:background-color bg-color}}
-    [ui/card-body
-     [view {:style
-            {:flex 1
-             :flex-direction "row"
-             :align-items "flex-start"
-             ;:justifyContent "space-around"
-             :margin 2
-             }}
-       [view
-        [ui/trustroots-avatar image-url]
-       ]
-      [view {:style {:flex 1
-                     :flex-direction "column"
-                     :align-items "stretch"
-                     :margin-left 10
-                     }}
-       [text {:style {:font-weight "bold"
-                      :font-size 16 }}
-        sender]
-       [text excerpt ]]
-      ]
-     [view {:style {:height 20
-                    :align-items "flex-end"
-                    }}
-      [view {:style {:flex 3
-                    :flex-direction "row"
-                    :align-items "center"
-                    ;:background-color "red"
-                     }}
+
+
+    [view {:flex 1 :flex-direction "column"}
+     [ui/card-with-gravatar
+      {
+        :message excerpt
+        :name sender
+        :time relative-time
+        :background-colpropsor bg-color
+        :avatar-image image-url}]
       
-       [ui/icon {:name "schedule"}]
-       [text {:style{:margin-left 5} } relative-time]
-       ]
-      ]
      ]
-    ]
-   ]))
+   ))
 
 (defn inbox-page [{style :style}]
   (let [messages (subscribe [:inbox/get])]

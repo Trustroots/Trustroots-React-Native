@@ -63,13 +63,59 @@
 
 (defn get-color [name] (:color (name COLOR)))
 
-;; typo graphy
-;; ===================================================================
+(def html-view (r/adapt-react-class (get (js->clj (js/require "react-native-htmlview")) "default")))
 
 (defn show-toast [message duration & gravity]
   (.ToastAndroid.show ReactNative message duration gravity)
   )
 
+;; Message
+;; =======
+(defn card-with-gravatar [props]
+  (let [{:keys [message
+                background-color
+                name
+                time
+                avatar-image]} props]
+    [card {:style {:background-color background-color}}
+     [card-body
+      [view {:style
+             {:flex 1
+              :flex-direction "row"
+              :align-items "flex-start"
+              :margin 2
+              }}
+       [view
+        [trustroots-avatar avatar-image]
+        ]
+       [view {:style {:flex 1
+                      :flex-direction "column"
+                      :align-items "stretch"
+                      :margin-left 10
+                      }}
+        [text {:style {:font-weight "bold"
+                       :font-size 16 }}
+         name]
+        [html-view {:value message }]]
+       ]
+      [view {:style {:height 20
+                     :align-items "flex-end"
+                     }}
+       [view {:style {:flex 3
+                      :flex-direction "row"
+                      :align-items "center"
+                      }}
+        [icon {:name "schedule"}]
+        [text {:style{:margin-left 5} } time]
+        ]
+       ]
+      ]
+     ]
+    ))
+
+
+;; Typography
+;; ==========
 (defn h1 [s]
   [text {:style
            {:font-size 30
@@ -94,5 +140,4 @@
            :margin-bottom 20
            :text-align "center"}} s]
 )
-
 
