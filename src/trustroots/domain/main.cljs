@@ -27,7 +27,7 @@
           }))
 
 ;; initial state of app-db
-(def apps
+(def app-db
   (merge auth/app-db
          {
           :services {:toaster nil}
