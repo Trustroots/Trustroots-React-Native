@@ -26,8 +26,11 @@ Configure development enviroment
 1. Install [React Native](https://facebook.github.io/react-native/docs/getting-started.html) and everything that react native requires for development.
 2. Install [Leiningen](http://leiningen.org/#install)
 3. Install re-natal: `npm install -g re-natal`
+4. Install the Android SDK
+5. Create an *Android Virtual Device*. You can use the build-in [emulator](https://developer.android.com/studio/run/emulator.html) from the Android SDK.
 
 In working directory:
+
 1. Install npm dependencies: `npm install`
 
 
@@ -45,11 +48,19 @@ re-natal use-figwheel
 lein figwheel android
 ```
 
-And once figwheel have started and you've started *android virtual machine*:
+Start your development server:
+
+```
+npm start
+```
+
+Now start up your android virtual device. Then run
 
 ```
 react-native run-android
 ```
+
+to install the app to the device.
 
 For more comprehensive instructions see: [Re-natal's readme](https://github.com/drapanjanas/re-natal)
 
@@ -61,7 +72,7 @@ Run tests once by running:
 lein cljsbuild test
 ```
 
-Start auto test runner: 
+Start auto test runner:
 
 ```
 lein cljsbuild auto test
