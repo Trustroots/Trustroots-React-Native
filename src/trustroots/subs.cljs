@@ -68,4 +68,12 @@
  :current-conversation
  (fn [db _]
    (let [selected-user (get @db :message/current-conversation)]
-     (get-in @db [:message/conversation-with selected-user]))))
+     (->>
+      (get-in @db [:message/conversation-with selected-user])
+      (map #(assoc
+             %1
+             :is-from-someone-else
+             (= selected-user
+                (get-in %1 [:userFrom :_id])
+                               ))))
+              )))

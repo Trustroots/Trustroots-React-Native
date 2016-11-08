@@ -109,7 +109,7 @@
   (fn [db user-pwd]
     (let [sign-in api/signin]
       (sign-in :user {:username (:user user-pwd) :password (:pwd user-pwd)}
-               :on-success (fn [user] (dispatch [:auth-success user] ))
+               :on-success (fn [user-res] (dispatch [:auth-success (:data user-res)] ))
                :on-error
                #(condp = (:type %)
                    :invalid-credentials (dispatch [:auth-fail])
