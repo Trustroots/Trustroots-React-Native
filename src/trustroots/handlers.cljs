@@ -218,10 +218,44 @@
    (dispatch [:set-page :conversation])
    (assoc db :message/current-conversation user-id)))
 
-(def react-native (js/require "react-native"))
+
+;; Send message
+;; ------------
+
+(register-handler-for
+ :message/send-to
+ (fn [db to-user-id content]
+   (let [send-message (partial api/send-message-to to-user-id content)]
+     (send-message
+      :on-success (fn [data]
+                    (dispatch [:message/send-to-success to-user-id (:data data)] ))
+      :on-error
+      (fn [error]
+        (log error)
+         (condp = (:type error)
+           :invalid-credentials (dispatch [:logout])
+           :network-error       (do (dispatch [:set-offline true])
+                                  (dispatch [:message/send-to-fail to-user-id content] ))
+           (dispatch [:unknown-error]))))
+
+     db)))
+
+(register-handler-for
+ :message/send-to-success
+ (fn [db to-user-id message]
+   (log data)
+
+   (update-in db [:message/conversation-with to-user-id] #(conj %1 message))))
+
+(register-handler-for
+ :message/send-to-fail
+ (fn [db user-id content] db))
+
 
 ;; Hardware related event listeners
 ;; ----------------------------------
+
+(def react-native (js/require "react-native"))
 
 (defn check-network-state []
   (-> react-native
@@ -244,7 +278,6 @@
    db))
 
 (comment 
-
 
   (re-frame.core/dispatch [:set-page :inbox] )
 
