@@ -21,52 +21,53 @@
     "gravatar" (str "https://www.gravatar.com/avatar/" emailHash) 
     nil )))
 
+(defn list-view-item [message]
+  (let [is-someone-else  (:is-from-someone-else message)
+        is-me (not (:is-from-someone-else message))
+        bubble-bg (if is-me "#CCF" "#DDD")]
+    (do
+      ^{:key (:_id message)}
+      [view
+       {
+        :style {
+                ;:background-color "red"
+                :flex -1
+                :flex-direction "row"
+                :align-items "flex-start"
+                ;;:justify-content "flex-start"
+                ;;:flex-basis 10
+                :margin-top 10
+                }
+        }
+       (when is-me [view {:style {:flex 4 :height 0 :background-color "red"}}])
+       [view
+        {:style
+         {:flex 6
+          :background-color bubble-bg
+          :border-radius 10
+          :padding 10
+          }
+         }
+        [ui/html-view {:value (get-in message [:content])}]]
+       (when is-someone-else [view {:style {:flex 4 :height 0 :background-color "blue"}}])
+       ]
+      )
+    ))
+
+
 (defn conversation-page [{style :style}]
   (let [messages (subscribe [:current-conversation])]
     (fn []
       (log "conversation" @messages)
       [view {:style {:flex-direction "column"
                      :margin 20
+                     :flex 1
+                     :justify-content "flex-end"
                      :align-items "stretch"}}
-       [ui/text "Conversation"]
-       (for [message @messages
-             :let [is-someone-else  (:is-from-someone-else message)
-                   is-me (not (:is-from-someone-else message))
-                   bubble-bg (if is-me "#CCF" "#DDD")]
-             ]
-         (do
-           ^{:key (:_id message)}
-           [view
-            {
-             :style {
-                     ; :background-color "red"
-                     :flex -1
-                     :flex-direction "row"
-                     :align-items "flex-start"
-                     ;;:justify-content "flex-start"
-                     ;;:flex-basis 10
-                     :margin-top 10
-                     }
-             }
-            (when is-me [view {:style {:flex 4 :height 0 :background-color "red"}}])
-            [view
-             {:style
-              {:flex 6
-               :background-color bubble-bg
-               :border-radius 10
-               :padding 10
-               }
-              }
-             [ui/html-view {:value (get-in message [:content])}]]
-            (when is-someone-else [view {:style {:flex 4 :height 0 :background-color "blue"}}])
-            ]
-           )
-         )         
-       [ui/button { :text "Logout"
-
-                    :value "logout"
-                    :raised true
-                    :on-press #(dispatch [:logout])}]
-      ]))) 
+       [list-view-with-subscription messages list-view-item "Conversation"]
+       [view {:style { :height 50 :background-color "yellow" :align-self "flex-end" :flex-direction "row"}}
+        [ui/input {:style {:flex 1 :align-self "flex-start" }}]
+        ]
+      ])))
 
 
