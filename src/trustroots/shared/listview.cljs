@@ -17,7 +17,6 @@
 (defn get-row-component [list-item-view]
   (r/reactify-component
    (fn[props]
-     (log "row-component" props)
      (let [row (->
                 (props :row)
                 (js->clj :keywordize-keys true))]

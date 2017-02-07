@@ -171,8 +171,6 @@
 (register-handler-for
  :inbox/fetch-success
  (fn [db data]
-   (log data)
-
    (assoc db :message/inbox data)))
 
 (register-handler-for
@@ -202,8 +200,6 @@
 (register-handler-for
  :conversation/fetch-success
  (fn [db user-id data]
-   (log data)
-
    (assoc-in db [:message/conversation-with user-id] data)))
 
 (register-handler-for
@@ -232,7 +228,7 @@
       :on-error
       (fn [error]
         (log error)
-         (condp = (:type error)
+        (condp = (:type error)
            :invalid-credentials (dispatch [:logout])
            :network-error       (do (dispatch [:set-offline true])
                                   (dispatch [:message/send-to-fail to-user-id content] ))
@@ -243,8 +239,6 @@
 (register-handler-for
  :message/send-to-success
  (fn [db to-user-id message]
-   (log data)
-
    (update-in db [:message/conversation-with to-user-id] #(conj %1 message))))
 
 (register-handler-for
@@ -280,10 +274,7 @@
 (comment 
 
   (re-frame.core/dispatch [:set-page :inbox] )
-
   (re-frame.core/dispatch [:inbox/fetch])
-
-
   (re-frame.core/subscribe [:inbox/get] )
 
 )

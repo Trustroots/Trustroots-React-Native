@@ -77,3 +77,8 @@
                 (get-in %1 [:userFrom :_id])
                                ))))
               )))
+
+(register-sub-for
+ :get-user-of-current-conversation
+ (fn [db _]
+   (get @db :message/current-conversation)))

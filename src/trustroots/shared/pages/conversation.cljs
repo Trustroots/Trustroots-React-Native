@@ -56,18 +56,41 @@
 
 
 (defn conversation-page [{style :style}]
-  (let [messages (subscribe [:current-conversation])]
+  (let [messages (subscribe [:current-conversation])
+        target-user (subscribe [:get-user-of-current-conversation])
+        ]
     (fn []
-      (log "conversation" @messages)
       [view {:style {:flex-direction "column"
                      :margin 20
                      :flex 1
                      :justify-content "flex-end"
                      :align-items "stretch"}}
        [list-view-with-subscription messages list-view-item "Conversation"]
-       [view {:style { :height 50 :background-color "yellow" :align-self "flex-end" :flex-direction "row"}}
-        [ui/input {:style {:flex 1 :align-self "flex-start" }}]
+       [view {:style
+              {
+               :height 50
+               :background-color "yellow"
+               :align-self "flex-end"
+               :flex-direction "row"
+               }}
+        ^{:key "msg-field"}
+        [ui/input {
+                   :style
+                   {
+                    :flex 1
+                    :align-self "flex-start"
+                   }
+                   :on-end-editing (fn [value]
+                                     (re-frame.core/dispatch
+                                      [
+                                       :message/send-to
+                                       @target-user
+                                       (-> value
+                                           .-nativeEvent
+                                           .-text)]))
+
+                    }]
         ]
       ])))
-
+ 
 
