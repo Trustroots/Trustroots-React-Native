@@ -24,25 +24,26 @@
 
 (defn list-view-item [row]
   (log row)
-  (let [excerpt  (get-in row [:message :excerpt])
-        sender    (get-in row [:discussion-with :displayName])
-        image-url  (get-image-url (:discussion-with row))
-        message-count  (get-in row [:message :excerpt])
-        read (get-in row [:read])
-        bg-color (if read "white" "#AAAAFF")
+  (let [partner-id    (get-in row [:discussion-with :_id])
+        partner-name  (get-in row [:discussion-with :displayName])
+        image-url     (get-image-url (:discussion-with row))
+        excerpt       (get-in row [:message :excerpt])
+        message-count (get-in row [:message :excerpt])
+        read          (get-in row [:read])
+        bg-color      (if read "white" "#AAAAFF")
         relative-time (to-now (:updated row))
         ]
 
 
     [view {:flex 1 :flex-direction "column"}
      [ui/card-with-gravatar
-      {
-        :message excerpt
-        :name sender
+      { :message excerpt
+        :name partner-name
         :time relative-time
         :background-colpropsor bg-color
-        :avatar-image image-url}]
-      
+        :avatar-image image-url
+        :on-press (fn []
+                    (dispatch [:show/conversation-with partner-id]))}]
      ]
    ))
 

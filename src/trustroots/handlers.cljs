@@ -208,7 +208,7 @@
 
 
 (register-handler-for
- :show/conversations-with
+ :show/conversation-with
  (fn [db user-id]
    (dispatch [:conversation/fetch user-id])
    (dispatch [:set-page :conversation])
