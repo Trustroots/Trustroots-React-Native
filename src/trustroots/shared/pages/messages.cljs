@@ -23,12 +23,12 @@
 
 (defn list-view-item [row]
   (log row)
-  (let [excerpt  (get-in row [:message :excerpt])
-        sender    (get-in row [:userFrom :displayName])
-        image-url  (get-image-url (:userFrom row))
-        message-count  (get-in row [:message :excerpt])
-        read (get-in row [:read])
-        bg-color (if read "white" "#AAAAFF")
+  (let [excerpt       (get-in row [:message :excerpt])
+        sender        (get-in row [:userFrom :displayName])
+        image-url     (get-image-url (:userFrom row))
+        message-count (get-in row [:message :excerpt])
+        read          (get-in row [:read])
+        bg-color      (if read "white" "#AAAAFF")
         relative-time (to-now (:updated row))
         ]
   [view {:flex 1 :flex-direction "column"}

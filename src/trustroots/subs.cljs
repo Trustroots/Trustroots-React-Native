@@ -35,7 +35,20 @@
 ;; -------------------------------------------------------------
 (register-sub-for
   :inbox/get
-  (fn [db _] (get @db :message/inbox)))
+  (fn [db _]
+    (let [inbox (get @db :message/inbox)
+          my-id (:_id (auth/get-user @db))]
+
+      (map
+       (fn [thread]
+         (let [user-to (:userFrom thread)
+               user-from (:userTo thread)]
+           (assoc thread :discussion-with
+                  (if (= (:_id user-to) my-id)
+                    user-from
+                    user-to))))
+       inbox)
+      )))
 
 ;; Navigation handlers
 ;; -------------------------------------------------------------

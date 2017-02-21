@@ -25,8 +25,8 @@
 (defn list-view-item [row]
   (log row)
   (let [excerpt  (get-in row [:message :excerpt])
-        sender    (get-in row [:userFrom :displayName])
-        image-url  (get-image-url (:userFrom row))
+        sender    (get-in row [:discussion-with :displayName])
+        image-url  (get-image-url (:discussion-with row))
         message-count  (get-in row [:message :excerpt])
         read (get-in row [:read])
         bg-color (if read "white" "#AAAAFF")
