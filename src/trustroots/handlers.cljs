@@ -39,6 +39,60 @@
       (debug (str "Dispatch " event-name))
       (apply handler-fn (concat [db] (rest evt))))))
 
+(defn add-in-progress-event-for [db event-key] db)
+
+(defn remove-in-progress-event-for [db event-key] db)
+
+(defn keyword-with-suffix [event-key suffix]
+  (keyword (namespace event-key) (str (name event-key) suffix)))
+
+(defn register-api-call-handler
+  [& {:keys [begin-api-event-key
+             api-call
+             init-fn
+             params-fn
+             success-fn
+             error-fn
+             context-fn]}]
+
+  (let [on-success-key (keyword-with-suffix begin-api-event-key "/success")
+        on-error-key (keyword-with-suffix begin-api-event-key "/error")]
+    (register-handler
+     begin-api-event-key
+     validate-schema-mw
+     (fn [db evt]
+       (let [init-db (if init-fn
+                       (apply init-fn (concat [db] (rest evt)))
+                       db)
+             context (when context-fn (apply context-fn (concat [init-db] (rest evt))))
+             on-api-success (fn [api-response]
+                              (dispatch [on-success-key (:data api-response) context]))
+             on-api-error (fn [error-response]
+                            (dispatch [on-error-key error-response context]))
+             partial-api-call (partial api-call
+                                       :on-success on-api-success
+                                       :on-error on-api-error)
+             params  (flatten (vec (apply params-fn (concat [init-db] (rest evt)))))]
+         (apply partial-api-call params)
+         (add-in-progress-event-for init-db begin-api-event-key))))
+
+    (register-handler
+     on-success-key
+     validate-schema-mw
+     (fn [db evt]
+       (-> db
+           (remove-in-progress-event-for begin-api-event-key)
+           (#(apply success-fn (concat [%1] (rest evt)))))))
+
+    (register-handler
+     on-error-key
+     validate-schema-mw
+     (fn [db evt]
+       (-> db
+           (remove-in-progress-event-for begin-api-event-key)
+           (#(apply error-fn (concat [%1] (rest evt)))))))
+    ))
+
 ;; Generic handlers
 ;; -------------------------------------------------------------
 
@@ -105,21 +159,40 @@
     (auth/set-user! db nil)))
 
 (register-handler-for
-  :login
-  (fn [db user-pwd]
-    (let [sign-in api/signin]
-      (sign-in :user {:username (:user user-pwd) :password (:pwd user-pwd)}
-               :on-success (fn [user-res] (dispatch [:auth-success (:data user-res)] ))
-               :on-error
-               #(condp = (:type %)
-                   :invalid-credentials (dispatch [:auth-fail])
-                   :network-error (dispatch [:set-offline true])
-                   (dispatch [:unknown-error])))
+ :login
+ (fn [db user-pwd]
+   (let [sign-in api/signin]
+     (sign-in :user {:username (:user user-pwd) :password (:pwd user-pwd)}
+              :on-success (fn [user-res] (dispatch [:auth-success (:data user-res)]))
+              :on-error
+              #(condp = (:type %)
+                 :invalid-credentials (dispatch [:auth-fail])
+                 :network-error (dispatch [:set-offline true])
+                 (dispatch [:unknown-error])))
 
-      (-> db
-          (auth/set-in-progress! true)
-          (auth/set-user!        nil)
-          (auth/set-error!       nil)))))
+     (-> db
+         (auth/set-in-progress! true)
+         (auth/set-user!        nil)
+         (auth/set-error!       nil)))))
+
+(register-api-call-handler
+ :begin-api-event-key  :auth/login
+ :api-call             api/signin
+ :init-fn              (fn [db user]
+                         (-> db
+                             (auth/set-user!  nil)
+                             (auth/set-error! nil)))
+ :params-fn            (fn [db user-pwd]
+                         {:user {:username (:user user-pwd) :password (:pwd user-pwd)}})
+ :success-fn           (fn [db user]
+                         (when (= (:page db) "login")
+                           (dispatch [:set-page :inbox]))
+                         (-> db
+                             (auth/set-user! user)))
+ :error-fn             (fn [db]
+                         (-> db
+                             (auth/set-error! "Authentication failed")))
+ )
 
 (register-handler-for
   :auth-fail
@@ -128,7 +201,6 @@
         (auth/set-in-progress! false)
         (auth/set-user!        nil)
         (auth/set-error!       "Authentication failed"))))
-
 
 (register-handler-for
   :auth-success
@@ -159,13 +231,12 @@
      (get-messages
       :on-success (fn [data]
                     (dispatch [:inbox/fetch-success (:data data)] ))
-              :on-error
-              #(condp = (:type %)
-                 :invalid-credentials (dispatch [:logout])
-                 :network-error       (do (dispatch [:set-offline true])
-                                           (dispatch :inbox/fetch-fail))
-                 (dispatch [:unknown-error])))
-
+      :on-error
+      #(condp = (:type %)
+         :invalid-credentials (dispatch [:logout])
+         :network-error       (do (dispatch [:set-offline true])
+                                  (dispatch :inbox/fetch-fail))
+         (dispatch [:unknown-error])))
      db)))
 
 (register-handler-for
