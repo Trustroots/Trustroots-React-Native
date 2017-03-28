@@ -34,10 +34,16 @@
         relative-time (to-now (:updated row))
         ]
 
-
-    [view {:flex 1 :flex-direction "column"}
-     [ui/card-with-gravatar
-      { :message excerpt
+    ^{:key (:_id row)}
+     [view {
+            ;           :flex 1
+            :flex -1
+            ;           :flex-direction "row"
+            :flex-direction "column"
+            :background-color :yellow
+            :margin 1}
+      [ui/card-with-gravatar
+       { :message excerpt
         :name partner-name
         :time relative-time
         :background-colpropsor bg-color
@@ -51,7 +57,8 @@
   (let [messages (subscribe [:inbox/get])]
     (fn []
       [view {:style { :flex-direction "column"
-                      :margin 20
+                     :margin 20
+                     :flex 1
                      :align-items "stretch"}}
        [list-view-with-subscription messages list-view-item "Messages"]
        [ui/button { :text "Refresh"
