@@ -9,6 +9,9 @@
     [trustroots.domain.auth :as auth]
     [trustroots.api :as api]
     ))
+;; -- Constants
+
+(def user-pwd-cache-key "user-pwd")
 
 ;; -- Middleware ------------------------------------------------------------
 ;; See https://github.com/Day8/re-frame/wiki/Using-Handler-Middleware
@@ -61,6 +64,7 @@
      begin-api-event-key
      validate-schema-mw
      (fn [db evt]
+       (debug (str "Dispatch " begin-api-event-key))
        (let [init-db (if init-fn
                        (apply init-fn (concat [db] (rest evt)))
                        db)
@@ -100,6 +104,9 @@
   :initialize-db
   (fn [_ _]
     (info app-db)
+    (db/cache-load user-pwd-cache-key
+                (fn [data] (dispatch [:auth/login data]))
+                identity)
     app-db))
 
 
@@ -184,7 +191,10 @@
                              (auth/set-error! nil)))
  :params-fn            (fn [db user-pwd]
                          {:user {:username (:user user-pwd) :password (:pwd user-pwd)}})
- :success-fn           (fn [db user]
+ :context-fn           (fn [db user] user)
+ :success-fn           (fn [db user context]
+                         (db/cache! user-pwd-cache-key context)
+                         
                          (when (= (:page db) "login")
                            (dispatch [:set-page :inbox]))
                          (-> db
