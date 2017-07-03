@@ -6,7 +6,8 @@
             [trustroots.android.styles :as s]
             [trustroots.handlers]
             [trustroots.subs]
-            [trustroots.shared.pages.main :refer [main-page]]
+            [trustroots.shared.pages.inbox :refer [inbox-page]]
+            [trustroots.shared.pages.conversation :refer [conversation-page]]
             [trustroots.shared.pages.login :refer [login-page]]
             ))
 
@@ -35,6 +36,7 @@
 
 (defn root-scene [{navigator :navigator}]
   (let [tab       (subscribe [:get-page])]
+    (fn []
      [ui/view { :flex 1
                 :style   (get-in s/styles [:page])
                 }
@@ -47,13 +49,14 @@
 ;;                   :style         (get-in s/styles [:toolbar])
 ;;                   :on-icon-press (fn [_]
 ;;                                 (.openDrawer @drawer))}]
-      (case @tab
-        "main"  [main-page  {:style (get-in s/styles [:pages :main ])} ]
-        "login" [login-page {:style (get-in s/styles [:pages :login])} ])]))
+      (case (str @tab)
+        ":inbox"        [inbox-page  {:style (get-in s/styles [:pages :main])} ]
+        ":conversation" [conversation-page  {:style (get-in s/styles [:pages :main])} ]
+        ":login"        [login-page {:style (get-in s/styles [:pages :login])} ])])))
 
 
 (defn app-root []
-  [ui/navigator {:initial-route   {:name "main" :index 1}
+  [ui/navigator {:initial-route   {:name ":inbox" :index 1}
                  :style           (get-in s/styles [:app])
                  :configure-scene (fn [_ _]
                                      js/React.Navigator.SceneConfigs.FloatFromBottomAndroid)
@@ -66,4 +69,5 @@
   (dispatch-sync [:initialize-db])
   (dispatch [:initialize-hardware])
   (dispatch [:load-db])
+  (dispatch [:register-service :toaster ui/show-toast])
   (.registerComponent app-registry "trustroots" #(r/reactify-component app-root)))

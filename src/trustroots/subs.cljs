@@ -31,6 +31,25 @@
   :get-greeting
   (fn [db _] (get @db :greeting)))
 
+;; Messages
+;; -------------------------------------------------------------
+(register-sub-for
+  :inbox/get
+  (fn [db _]
+    (let [inbox (get @db :message/inbox)
+          my-id (:_id (auth/get-user @db))]
+
+      (map
+       (fn [thread]
+         (let [user-to (:userFrom thread)
+               user-from (:userTo thread)]
+           (assoc thread :discussion-with
+                  (if (= (:_id user-to) my-id)
+                    user-from
+                    user-to))))
+       inbox)
+      )))
+
 ;; Navigation handlers
 ;; -------------------------------------------------------------
 
@@ -39,7 +58,7 @@
   (fn [db _]
     (if (auth/get-user @db)
       (get @db :page)
-      "login" )))
+      :login)))
 
 ;; Authentication/identity subs
 ;; -------------------------------------------------------------
@@ -58,3 +77,21 @@
           true                      {:in-progress false
                                      :succeed false})))
 
+(register-sub-for
+ :current-conversation
+ (fn [db _]
+   (let [selected-user (get @db :message/current-conversation)]
+     (->>
+      (get-in @db [:message/conversation-with selected-user])
+      (map #(assoc
+             %1
+             :is-from-someone-else
+             (= selected-user
+                (get-in %1 [:userFrom :_id])
+                               ))))
+              )))
+
+(register-sub-for
+ :get-user-of-current-conversation
+ (fn [db _]
+   (get @db :message/current-conversation)))

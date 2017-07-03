@@ -39,8 +39,20 @@
 (def card              (r/adapt-react-class (.-Card            js/MaterialDesign)))
 (def card-body         (r/adapt-react-class (.-Card.Body       js/MaterialDesign)))
 (def card-media        (r/adapt-react-class (.-Card.Media      js/MaterialDesign)))
-(def card-actions      (r/adapt-react-class (.-Card.Actions     js/MaterialDesign)))
+(def card-actions      (r/adapt-react-class (.-Card.Actions    js/MaterialDesign)))
 
+(def avatar            (r/adapt-react-class (.-Avatar          js/MaterialDesign)))
+
+(defn image-component [image-url]
+  (r/as-element
+   [image
+    {:source {:uri image-url}}]))
+
+(defn trustroots-avatar [image-url]
+  (if image-url
+    [avatar {:image (image-component image-url) :size 50 :backgroundColor "paperLime"}]
+    [avatar {:icon "person" :size 50 :backgroundColor "paperLime"}])
+  )
 
 (def button            (r/adapt-react-class (.-Button          js/MaterialDesign)))
 (def drawer-layout     (r/adapt-react-class (.-Drawer          js/MaterialDesign)))
@@ -51,9 +63,65 @@
 
 (defn get-color [name] (:color (name COLOR)))
 
-;; typo graphy
-;; ===================================================================
+(def html-view (r/adapt-react-class (get (js->clj (js/require "react-native-htmlview")) "default")))
 
+(defn show-toast [message duration & gravity]
+  (.ToastAndroid.show ReactNative message duration gravity)
+  )
+
+;; Message
+;; =======
+(defn card-with-gravatar [props]
+  (let [{:keys [message
+                background-color
+                name
+                time
+                avatar-image
+                on-press]} props]
+    [touchable-highlight
+     {:on-press on-press}
+     [view
+      [card {:style {:background-color background-color}}
+       [card-body
+        [view {:style
+               {:flex 1
+                :flex-direction "row"
+                :align-items "flex-start"
+                :margin 2
+                }}
+         [view
+          [trustroots-avatar avatar-image]
+          ]
+         [view {:style {:flex 1
+                        :flex-direction "column"
+                        :align-items "stretch"
+                        :margin-left 10
+                        }}
+          [text {:style {:font-weight "bold"
+                         :font-size 16 }}
+           name]
+          [html-view {:value message }]]
+         ]
+        [view {:style {:height 20
+                       :align-items "flex-end"
+                       }}
+         [view {:style {:flex 3
+                        :flex-direction "row"
+                        :align-items "center"
+                        }}
+          [icon {:name "schedule"}]
+          [text {:style{:margin-left 5} } time]
+          ]
+         ]
+        ]
+       ]
+      ]
+     ]
+    ))
+
+
+;; Typography
+;; ==========
 (defn h1 [s]
   [text {:style
            {:font-size 30
@@ -78,5 +146,4 @@
            :margin-bottom 20
            :text-align "center"}} s]
 )
-
 

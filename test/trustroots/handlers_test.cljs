@@ -44,8 +44,8 @@
    {
     "Test that :set-page message updates page correcty"
     [:act (fn []
-           (dispatch-sync [:set-page "foobar"]))
-    :=     #(get-in-db [:page])  "foobar"]
+           (dispatch-sync [:set-page :inbox]))
+     :truthy? #(= (get-in-db [:page]) :inbox)]
     }
 
    "Auhentication tests"

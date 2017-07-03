@@ -9,6 +9,9 @@
     [trustroots.domain.auth :as auth]
     [trustroots.api :as api]
     ))
+;; -- Constants
+
+(def user-pwd-cache-key "user-pwd")
 
 ;; -- Middleware ------------------------------------------------------------
 ;; See https://github.com/Day8/re-frame/wiki/Using-Handler-Middleware
@@ -39,6 +42,61 @@
       (debug (str "Dispatch " event-name))
       (apply handler-fn (concat [db] (rest evt))))))
 
+(defn add-in-progress-event-for [db event-key] db)
+
+(defn remove-in-progress-event-for [db event-key] db)
+
+(defn keyword-with-suffix [event-key suffix]
+  (keyword (namespace event-key) (str (name event-key) suffix)))
+
+(defn register-api-call-handler
+  [& {:keys [begin-api-event-key
+             api-call
+             init-fn
+             params-fn
+             success-fn
+             error-fn
+             context-fn]}]
+
+  (let [on-success-key (keyword-with-suffix begin-api-event-key "/success")
+        on-error-key (keyword-with-suffix begin-api-event-key "/error")]
+    (register-handler
+     begin-api-event-key
+     validate-schema-mw
+     (fn [db evt]
+       (debug (str "Dispatch " begin-api-event-key))
+       (let [init-db (if init-fn
+                       (apply init-fn (concat [db] (rest evt)))
+                       db)
+             context (when context-fn (apply context-fn (concat [init-db] (rest evt))))
+             on-api-success (fn [api-response]
+                              (dispatch [on-success-key (:data api-response) context]))
+             on-api-error (fn [error-response]
+                            (dispatch [on-error-key error-response context]))
+             partial-api-call (partial api-call
+                                       :on-success on-api-success
+                                       :on-error on-api-error)
+             params  (flatten (vec (apply params-fn (concat [init-db] (rest evt)))))]
+         (apply partial-api-call params)
+         (add-in-progress-event-for init-db begin-api-event-key))))
+
+    (register-handler
+     on-success-key
+     validate-schema-mw
+     (fn [db evt]
+       (-> db
+           (remove-in-progress-event-for begin-api-event-key)
+           (#(apply success-fn (concat [%1] (rest evt)))))))
+
+    (register-handler
+     on-error-key
+     validate-schema-mw
+     (fn [db evt]
+       (-> db
+           (remove-in-progress-event-for begin-api-event-key)
+           (#(apply error-fn (concat [%1] (rest evt)))))))
+    ))
+
 ;; Generic handlers
 ;; -------------------------------------------------------------
 
@@ -46,13 +104,16 @@
   :initialize-db
   (fn [_ _]
     (info app-db)
+    (db/cache-load user-pwd-cache-key
+                (fn [data] (dispatch [:auth/login data]))
+                identity)
     app-db))
 
 
 (register-handler-for
- :set-service
- (fn [db service value]
-   (assoc-in db [:services service] value)))
+ :register-service
+ (fn [db service-key service]
+   (assoc-in db [:services service-key] service)))
 
 
 ;; Navigation handlers
@@ -105,21 +166,43 @@
     (auth/set-user! db nil)))
 
 (register-handler-for
-  :login
-  (fn [db user-pwd]
-    (let [sign-in api/signin]
-      (sign-in :user {:username (:user user-pwd) :password (:pwd user-pwd)}
-               :on-success (fn [user] (dispatch [:auth-success user] ))
-               :on-error
-               #(condp = (:type %)
-                   :invalid-credentials (dispatch [:auth-fail])
-                   :network-error (dispatch [:check-off-line])
-                   (dispatch [:unknown-error])))
+ :login
+ (fn [db user-pwd]
+   (let [sign-in api/signin]
+     (sign-in :user {:username (:user user-pwd) :password (:pwd user-pwd)}
+              :on-success (fn [user-res] (dispatch [:auth-success (:data user-res)]))
+              :on-error
+              #(condp = (:type %)
+                 :invalid-credentials (dispatch [:auth-fail])
+                 :network-error (dispatch [:set-offline true])
+                 (dispatch [:unknown-error])))
 
-      (-> db
-          (auth/set-in-progress! true)
-          (auth/set-user!        nil)
-          (auth/set-error!       nil)))))
+     (-> db
+         (auth/set-in-progress! true)
+         (auth/set-user!        nil)
+         (auth/set-error!       nil)))))
+
+(register-api-call-handler
+ :begin-api-event-key  :auth/login
+ :api-call             api/signin
+ :init-fn              (fn [db user]
+                         (-> db
+                             (auth/set-user!  nil)
+                             (auth/set-error! nil)))
+ :params-fn            (fn [db user-pwd]
+                         {:user {:username (:user user-pwd) :password (:pwd user-pwd)}})
+ :context-fn           (fn [db user] user)
+ :success-fn           (fn [db user context]
+                         (db/cache! user-pwd-cache-key context)
+                         
+                         (when (= (:page db) "login")
+                           (dispatch [:set-page :inbox]))
+                         (-> db
+                             (auth/set-user! user)))
+ :error-fn             (fn [db]
+                         (-> db
+                             (auth/set-error! "Authentication failed")))
+ )
 
 (register-handler-for
   :auth-fail
@@ -129,34 +212,132 @@
         (auth/set-user!        nil)
         (auth/set-error!       "Authentication failed"))))
 
-
 (register-handler-for
   :auth-success
   (fn [db user]
     (dispatch [:save-db])
     (when (= (:page db) "login")
-      (dispatch [:set-page "main"]))
+      (dispatch [:set-page :inbox]))
     (-> db
         (auth/set-in-progress! false)
         (auth/set-user!        user)
         (auth/set-error!       nil))))
 
 (register-handler-for
- :set-off-line
+ :set-offline
  (fn [db mode]
+   (when-let [toaster (get-in db [:services :toaster])]
+            (log toaster)
+            (toaster "You are currently offline" 5000)
+            )
    (assoc db :network-state mode)))
 
-(def react-native (js/require "react-native"))
+;; get inbox
+
+(register-handler-for
+ :inbox/fetch
+ (fn [db user-pwd]
+   (let [get-messages api/inbox]
+     (get-messages
+      :on-success (fn [data]
+                    (dispatch [:inbox/fetch-success (:data data)] ))
+      :on-error
+      #(condp = (:type %)
+         :invalid-credentials (dispatch [:logout])
+         :network-error       (do (dispatch [:set-offline true])
+                                  (dispatch :inbox/fetch-fail))
+         (dispatch [:unknown-error])))
+     db)))
+
+(register-handler-for
+ :inbox/fetch-success
+ (fn [db data]
+   (assoc db :message/inbox data)))
+
+(register-handler-for
+ :inbox/fetch-fail
+ (fn [db data] db))
+
+
+;; Get one message thread (=converstion)
+;; ----------------------
+
+(register-handler-for
+ :conversation/fetch
+ (fn [db user-id]
+   (let [get-messages (partial api/conversation-with user-id)]
+     (get-messages
+      :on-success (fn [data]
+                    (dispatch [:conversation/fetch-success user-id (:data data)] ))
+      :on-error
+      #(condp = (:type %)
+         :invalid-credentials (dispatch [:logout])
+         :network-error       (do (dispatch [:set-offline true])
+                                  (dispatch [:conversation/fetch-fail user-id] ))
+         (dispatch [:unknown-error])))
+
+     db)))
+
+(register-handler-for
+ :conversation/fetch-success
+ (fn [db user-id data]
+   (assoc-in db [:message/conversation-with user-id] data)))
+
+(register-handler-for
+ :conversation/fetch-fail
+ (fn [db user-id] db))
+
+
+(register-handler-for
+ :show/conversation-with
+ (fn [db user-id]
+   (dispatch [:conversation/fetch user-id])
+   (dispatch [:set-page :conversation])
+   (assoc db :message/current-conversation user-id)))
+
+
+;; Send message
+;; ------------
+
+(register-handler-for
+ :message/send-to
+ (fn [db to-user-id content]
+   (let [send-message (partial api/send-message-to to-user-id content)]
+     (send-message
+      :on-success (fn [data]
+                    (dispatch [:message/send-to-success to-user-id (:data data)] ))
+      :on-error
+      (fn [error]
+        (log error)
+        (condp = (:type error)
+           :invalid-credentials (dispatch [:logout])
+           :network-error       (do (dispatch [:set-offline true])
+                                  (dispatch [:message/send-to-fail to-user-id content] ))
+           (dispatch [:unknown-error]))))
+
+     db)))
+
+(register-handler-for
+ :message/send-to-success
+ (fn [db to-user-id message]
+   (update-in db [:message/conversation-with to-user-id] #(conj %1 message))))
+
+(register-handler-for
+ :message/send-to-fail
+ (fn [db user-id content] db))
+
 
 ;; Hardware related event listeners
 ;; ----------------------------------
 
-(defn check-nework-state []
+(def react-native (js/require "react-native"))
+
+(defn check-network-state []
   (-> react-native
       (.-NetInfo)
       (.-isConnected)
       (.fetch)
-      (.done #(dispatch [:set-off-line (not %)])))
+      (.done #(dispatch [:set-offline (not %)])))
   )
 
 (register-handler-for
@@ -171,4 +352,10 @@
    ;    15000)
    db))
 
+(comment 
 
+  (re-frame.core/dispatch [:set-page :inbox] )
+  (re-frame.core/dispatch [:inbox/fetch])
+  (re-frame.core/subscribe [:inbox/get] )
+
+)

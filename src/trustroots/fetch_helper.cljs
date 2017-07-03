@@ -36,17 +36,25 @@
                                        (on-error   {:data data :status status :type error-type})))
                        ]
                    (-> (.json res)
+                       (.then #(js->clj %1 :keywordize-keys true))
+                       (.then #(if
+                                 (vector? %1)
+                                 (vec (map clojure.walk/keywordize-keys %1))
+                                 %1))
                        (.then #(do (log %) %))
                        (.then handle-data))))))))
 
-(defn fetch-json [& {:keys [url endpoint headers method body on-success on-error fetch-fn] }]
+(defn fetch-json [& {:keys [url endpoint endpoint-path headers method body on-success on-error fetch-fn] }]
   "Helper for JSON rest api request"
   (let [react-fetch    (if (nil? fetch-fn)
                          js/fetch
                          fetch-fn)
+        path           (apply str (map (partial str "/") endpoint-path))
         req-url        (if (nil? endpoint)
                          url
-                         (get-url endpoint))
+                         ;(get-url endpoint)
+                          (str (get-url endpoint) path)
+                         )
         default-header {"Content-Type" "application/json" "Accept" "application/json"}
         optional-body  (if body
                          {"body" (js/JSON.stringify (clj->js body)) }
@@ -59,5 +67,7 @@
                     optional-body )
         query (react-fetch req-url (clj->js args))
         ]
+
+    (log "req-url:" req-url)
     (handle-fetch-promise query :on-error on-error :on-success on-success)))
  

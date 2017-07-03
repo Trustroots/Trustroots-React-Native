@@ -10,11 +10,13 @@
     "moment": "^2.14.1",
     "react": "15.2.1",
     "react-native": "^0.30.0",
+    "react-native-htmlview": "git://github.com/ilmirajat/react-native-htmlview.git#peerdependency-fix",
     "react-native-material-design": "^0.3.6",
     "react-native-store": "^0.4.1",
     "react-native-vector-icons": "^2.0.3"
   },
   "devDependencies": {
+    "bluebird": "^3.4.6",
     "chai": "^3.5.0",
     "enzyme": "^2.4.1",
     "fetch-polyfill": "^0.8.2",
