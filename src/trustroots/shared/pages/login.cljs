@@ -51,7 +51,7 @@
                                          (swap! fields assoc :pwd (-> value
                                                                       .-nativeEvent
                                                                       .-text))
-                                         (dispatch [:login @fields]))
+                                         (dispatch [:auth/login @fields]))
                                         ;:on-change-text  (fn [value] (swap! fields assoc :pwd value))
                                         ;:value           (:pwd @fields)
                     :style             {:width 200}} ]
