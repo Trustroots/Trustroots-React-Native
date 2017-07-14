@@ -41,12 +41,15 @@ Develop
 
 ### Development build when using android avd
 
-Run first:
+First start up your android virtual device. (e.g if you're using the android sdk emulator, `Android/Sdk/tools/emulator -avd [emulator name]`)
+
+If you've installed a different version of re-natal than the one listed `packages.json`, then use the local version in the `./node_modules` folder (e.g `./node_modules/.bin/`) when running the following:
 
 ```
 re-natal use-android-device avd
 re-natal enable-source-maps
 re-natal use-figwheel
+
 lein figwheel android
 ```
 
@@ -56,13 +59,17 @@ Start your development server:
 npm start
 ```
 
-Now start up your android virtual device. Then run
+Install the app to the device:
 
 ```
 react-native run-android
 ```
 
-to install the app to the device.
+Enable remote debugging: 
+
+- `ctrl-m`, click "start remote debugging"
+- this will open [http://localhost:8081/debugger-ui] in your browser
+- you might need to also open dev tools
 
 For more comprehensive instructions see: [Re-natal's readme](https://github.com/drapanjanas/re-natal)
 
@@ -132,58 +139,58 @@ Solution 3: Check Android logs using command `adb logcat`. (You probable get ins
 Architecture in nutshell
 -----------------------------
 
-Re-frame is a archictural framework that reminds Redux and other Flux implementations. 
+Re-frame is a architectural framework that is similar to Redux and other Flux implementations. 
 
 The idea is simple:
 
-1. In re-frame application state is stored in an ratom called db (database). Ratom (reactive atom) is an observable datastructure that ensure atomic modifications (i.e. only one change at time to the latest version of data it contains). The sturucture of db is constrained by a schema. Currently plumatic schema is used, but it will change to core.spec at some point.
-2. Database is modified by events. The logic how an event changes db is specifed by a handler.
-3. UI component listens re-frame subscription. Each subscription is a observable view to db. You need to specify view to data in subs.cljs first, then you can subscribe it in UI component by using `re-frame.core/subscribe` function that returns an `ratom`.
-4. UI component will dispatch events to re-frame dispatch. The events are handled by a handler in order they arrive to the dispatcher sequentially. If you dispatch an event in a handler, it will be handled *after* the current handler function call is finished. (I.e. you cannot dispatch event synchronously in a handler.) Each handler must return an updated version of db, and as they're called they get curent db as parameter. After a handler returns, subscriptions trigger.
+1. In re-frame, application state is stored in an ratom called db (database). Ratom (reactive atom) is an observable data structure that ensure atomic modifications (i.e. only one change at time to the latest version of data it contains). The structure of db is constrained by a schema. Currently plumatic schema is used, but it will change to core.spec at some point.
+2. The database is modified by events. The logic of how an event changes db is specifed by a handler.
+3. UI component listens for re-frame subscriptions. Each subscription is an observable view to db. You need to specify view to data in subs.cljs first, then you can subscribe it in UI component by using `re-frame.core/subscribe` function that returns an `ratom`.
+4. UI component will dispatch events to re-frame dispatch. The events are handled by a handler in the order they arrive to the dispatcher sequentially. If you dispatch an event in a handler, it will be handled *after* the current handler function call is finished. (I.e. you cannot dispatch event synchronously in a handler.) Each handler must return an updated version of db, and as they're called they get curent db as parameter. After a handler returns, subscriptions trigger.
 
-In most cases you need to do you need to answer three question when you develop new feature:
+In most cases, you need to answer these question when you develop a new feature:
 
-1. What data feature needs? 
-  #. You may need to extend schema and db. 
-  #. You need to write a subscrition or maybe two. UI components should not depend directly to db-structure.
-2. How data changes?
-  #. Implement a handler for each reason to change.
-  #. Re-frame encourages you to think how the data changes. Like if data should be changed by a REST call, you probably need a handler for successfull call and an unsuccessful call. That's where you start. Then you probably add handler that does the REST call and changes db so that user knows that something is happening. Handlers for successful or erroneous event handlers do not know where the data related to an event comes from. Handler that does the REST request, doesn't know how the response is used. Pros of this approach is that you can easily change any of the parts without modifying other parts (open/closed principle) and easily trigger any change from REPL or in tests; cons for this this approach is that it can be hard to understand how the data flows and where it comes.
-3. When data should be fetched? There are three options: 
-  #. When app starts. In this case you dispatch fetch event in [platform]/core.clsj init function. There is separate core.clsj for Androind and iOS in. 
-  #. When user does something you dispatch the event from React native UI component event handler.
-  #. Periodically (e.g. once per 1 minute). You can use JavaScript setTimeout and put it to handler.cljs file. Currently this is a bit clumsy and problably a helper function should be created for it. 
-4. How user interact with data (UI)? 
-  #. The goal is that there is as much shared components as possible. UI components are located in `shared`, `android` and `ios` directories. In addition to documentation there is now way to know what component works in which framework. Not all components supports all features in React Native component and component may behave differently on differnt platforms. This is React Native design desision.
-5. What component should looklike?
-  #. Till now we have used a lot of inline style. They should be refactored to platform specific styles.cljs file.
+1. What data does the feature need?
+  #. You may need to extend the schema and db. (in the `/domain` folder)
+  #. You need to write a subscrition or maybe two. UI components should not depend directly on the db's structure.
+2. How does the data change?
+  #. Implement a handler for each reason to change. (`handlers.cljs`)
+  #. Re-frame encourages you to think about how the data changes. If the data should be changed by a REST call, you probably need a handler for a successful call and one for an unsuccessful call. That's where you start. Then you probably add a handler that does the REST call and changes db so that users know that something is happening. Handlers for successful or erroneous events do not know where the data related to an event comes from. Handlers that do the REST request don't know how the response is used. Pros of this approach is that you can easily change any of the parts without modifying other parts (open/closed principle) and easily trigger any change from the REPL or in tests; cons for this this approach is that it can be hard to understand how the data flows and where it comes.
+3. When should data be fetched? There are three options: 
+  #. When the app starts. In this case you dispatch fetch events in `[platform]/core.clsj` init function. There are separate `core.cljs` files for Androind and iOS. 
+  #. When the user does something, you dispatch the event from a react-native UI component event handler.
+  #. Periodically (e.g. once per 1 minute). You can use JavaScript setTimeout and put it in the `handler.cljs` file. Currently this is a bit clumsy and probably a helper function should be created for it. 
+4. How does the user interact with the data (in the UI)?
+  #. The goal is that there are as much shared components as possible. UI components are located in `shared`, `android` and `ios` directories. In addition to documentation there is no way to know what component works in which framework. Not all components support all features in React Native and components may behave differently on differnt platforms. This is a React Native design decision.
+5. What should the components look like?
+  #. Until now we have used a lot of inline style. They should be refactored to platform specific `styles.cljs` files.
 
 ### Project structure
 
-Actual source code you should modify are in ./src/trustroots/ and ./test/ directories, and images are in /images/ directory. In addition to those there are two files you need to modify:
+Actual source code you should modify are in the `./src/trustroots/` and `./test/` directories, and images are in the `/images/` directory. In addition to those there are two files you need to modify:
 
-- package.json contains npm packages.
-- .re-natal is used by leiningen to bundle JavaScript source for react-native. You need to list there all npm packages that should be included in react native app. Leiningen does not use package.json for this. I.e. if you want to use an 3rd party library you need install it first by using npm and then add the name of packages to this file. This file contains also some other build related information, and it is modified e.g. when you swap between emulator and physical machine.
+- `package.json` contains npm packages.
+- `.re-natal` is used by leiningen to bundle JavaScript source for react-native. You need to list there all npm packages that should be included in the react native app. Leiningen does not use `package.json` for this. I.e. if you want to use a 3rd party library you need install it first by using npm and then add the name of packages to `.re-natal`. This file also contains some other build-related information, and it is modified e.g. when you swap between emulator and physical machine.
 
-#### src/trustroots structure:
+#### src/trustroots structure
 
-- android: android specific UI components goes to this folder
+- android: android specific UI components goes in this folder
 - domain: contains schema definitions.
-- ios: iOS specific UI components goes to this folder. Currently app does not support iOS so there's not much here.
-- shared: all component thar should work both in android and iOS are located here.
-- api.cljs: REST api call helpers goes here.
-- db.cljs: This file contains helpers for persisting data, including caching mechanims.
-- fetch_helper.cljs contain wrapper for react native fetch function. This is used for REST calls.
-- handlers.clsj contains all re-frame handlers. Currently this file is rather long and it might be split to many files.
-- subs.cljs contains observable re-frame subscriptions.
+- ios: iOS specific UI components goes to this folder. Currently the app does not support iOS so there's not much here.
+- shared: all component that should work both in android and iOS are located here.
+- `api.cljs`: REST api call helpers goes here.
+- `db.cljs`: This file contains helpers for persisting data, including caching mechanims.
+- `fetch_helper.cljs`: contains wrapper for react native fetch function. This is used for REST calls.
+- `handlers.clsj`: contains all re-frame handlers. Currently this file is rather long and it might be split to many files.
+- `subs.cljs`: contains observable re-frame subscriptions.
 
-### App state (db)scheama 
+### App state (db) schema 
 
-Currently domain model reflects closely to what REST APIs return. This need to be changed as the app should support off-line use and rest APIs may not return all data (they page data). 
+Currently the domain model closely reflects what the REST APIs return. This needs to be changed as the app should support offline use and rest APIs may not return all data at once (they page data). 
 
-#### Proposall for new schema
+#### Proposal for new schema
 
-- users: map of all users current user has had a conversation, or that are his friends. 
+- users: map of all users the current user has had a conversation with, or that are their friends. 
   -  { <id>: <user-data> }
 - me: Current user id
 - last-sync-time: last change timestamp (this should come form server)
@@ -219,7 +226,7 @@ Currently domain model reflects closely to what REST APIs return. This need to b
   - `[:message/send-to-fail error]`
   
 
-#### Requires refactoring. 
+#### Requires refactoring
 
 Currently support only one page and are clumsy to use.
 
@@ -231,7 +238,8 @@ Currently support only one page and are clumsy to use.
   - `[:conversation/fetch-fail]`
 - `[:show/conversation-with user-id]` Fetch discusison, move to conversation page and set current conversation (that should be shown to given user id).
 
-#### Obsolete handlers 
+#### Obsolete handlers
+
 - `[:load-db]` load whole db form local storage.
 - `[:save-db]` save whole db to local storage.
 - `[:set-db]` Helper for setting whole database.
