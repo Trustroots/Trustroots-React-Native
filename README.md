@@ -136,10 +136,10 @@ Re-frame is a archictural framework that reminds Redux and other Flux implementa
 
 The idea is simple:
 
-1. In re-frame application state is stored in an ratom called db (database). Ratom (reactive atom) is a observable datastructure that ensure atomic modifications (i.e. only one change at time to the latest version of data it contains). The sturucture of db is constraint by schema. Currently prismatic schema is used, but it will change to core.spec at somepoint.
+1. In re-frame application state is stored in an ratom called db (database). Ratom (reactive atom) is an observable datastructure that ensure atomic modifications (i.e. only one change at time to the latest version of data it contains). The sturucture of db is constrained by a schema. Currently plumatic schema is used, but it will change to core.spec at some point.
 2. Database is modified by events. The logic how an event changes db is specifed by a handler.
-3. UI component listens re-frame subscription. Each subscription is a observable view to db. You need to specify view to data in subs.cljs first, then you can subscribe it in UI component by using `re-frame.core/subscribe` function that reaturn ratom.
-4. UI component will dispatch events to re-frame dispatch. The events is handled by handler in ordre they are arrived to the dispatcher on by one. If you dispatch an event in handler if will be handled *after* the event you are handling. (I.e. you cannot dispatch event syncronously in an handler.) Each handler must reaturn an updated version of db, and each of them get curent db as parameter. After a handler returns, subscribtions triggers.
+3. UI component listens re-frame subscription. Each subscription is a observable view to db. You need to specify view to data in subs.cljs first, then you can subscribe it in UI component by using `re-frame.core/subscribe` function that returns an `ratom`.
+4. UI component will dispatch events to re-frame dispatch. The events are handled by a handler in order they arrive to the dispatcher sequentially. If you dispatch an event in a handler, it will be handled *after* the current handler function call is finished. (I.e. you cannot dispatch event synchronously in a handler.) Each handler must return an updated version of db, and as they're called they get curent db as parameter. After a handler returns, subscriptions trigger.
 
 In most cases you need to do you need to answer three question when you develop new feature:
 
@@ -148,13 +148,13 @@ In most cases you need to do you need to answer three question when you develop 
   #. You need to write a subscrition or maybe two. UI components should not depend directly to db-structure.
 2. How data changes?
   #. Implement a handler for each reason to change.
-  #. Re-frame anticipate thinking style where you just thing how the data changes, i.e. what are the situations. E.g. if data should be change by a REST call, you probably need  handler for successfull call and unsuccessful call. That where you start. Then you probably add handler that does the REST call and changes db so that user knows that something is happening. Handler for successful call, and errorous call does not know where the data related to an event comes from. Handler that does the call, don't know how the response is used. Pros of this approche is that you can easily change any of the parts without modifying other parts (open/closed principle) and easily trigger any change from REPL or in tests; cons for this this approach is that it can be hard to understand how the data flows and where it comes.
+  #. Re-frame encourages you to think how the data changes. Like if data should be changed by a REST call, you probably need a handler for successfull call and an unsuccessful call. That's where you start. Then you probably add handler that does the REST call and changes db so that user knows that something is happening. Handlers for successful or erroneous event handlers do not know where the data related to an event comes from. Handler that does the REST request, doesn't know how the response is used. Pros of this approach is that you can easily change any of the parts without modifying other parts (open/closed principle) and easily trigger any change from REPL or in tests; cons for this this approach is that it can be hard to understand how the data flows and where it comes.
 3. When data should be fetched? There are three options: 
   #. When app starts. In this case you dispatch fetch event in [platform]/core.clsj init function. There is separate core.clsj for Androind and iOS in. 
-  #. When used does something. In this case you dispatch the event from react native UI component event handler.
-  #. Periodically (e.g. once per 1 minute). You can use JavaScript setTimeout and put it to handler.cljs file. Currentlty this is a bit clumsy and problably you should create helper function for this. 
+  #. When user does something you dispatch the event from React native UI component event handler.
+  #. Periodically (e.g. once per 1 minute). You can use JavaScript setTimeout and put it to handler.cljs file. Currently this is a bit clumsy and problably a helper function should be created for it. 
 4. How user interact with data (UI)? 
-  #. The goal is that there is as much shared components as possible. UI components are located in shared, andoid and iOS directories. In addition to documentation there is now way to know what component works in which framework. Not all components supports all features in React Native component and component may behave differently on differnt platforms. This is React Native design desision.
+  #. The goal is that there is as much shared components as possible. UI components are located in `shared`, `android` and `ios` directories. In addition to documentation there is now way to know what component works in which framework. Not all components supports all features in React Native component and component may behave differently on differnt platforms. This is React Native design desision.
 5. What component should looklike?
   #. Till now we have used a lot of inline style. They should be refactored to platform specific styles.cljs file.
 
@@ -168,23 +168,24 @@ Actual source code you should modify are in ./src/trustroots/ and ./test/ direct
 #### src/trustroots structure:
 
 - android: android specific UI components goes to this folder
-- domain: contains shema specs.
+- domain: contains schema definitions.
 - ios: iOS specific UI components goes to this folder. Currently app does not support iOS so there's not much here.
 - shared: all component thar should work both in android and iOS are located here.
 - api.cljs: REST api call helpers goes here.
 - db.cljs: This file contains helpers for persisting data, including caching mechanims.
 - fetch_helper.cljs contain wrapper for react native fetch function. This is used for REST calls.
-- handlers.clsj contains all re-frame handels. Currently this file is rather long and it might be split to many files.
-- subs.cljs contains observable re-frame subscription.
+- handlers.clsj contains all re-frame handlers. Currently this file is rather long and it might be split to many files.
+- subs.cljs contains observable re-frame subscriptions.
 
 ### App state (db)scheama 
 
-Currently domain model reflects closely to what REST api's return. This need to be changed as the app should support off-line use and rest APIs may not return all data (they page data). 
+Currently domain model reflects closely to what REST APIs return. This need to be changed as the app should support off-line use and rest APIs may not return all data (they page data). 
 
 #### Proposall for new schema
 
-- users: map of all users curent use have had a converstion, or that are his friends. Key: Id, value: user-data
-- me: tells who of the user list is me. Id only
+- users: map of all users current user has had a conversation, or that are his friends. 
+  -  { <id>: <user-data> }
+- me: Current user id
 - last-sync-time: last change timestamp (this should come form server)
 - inbox: {
    *thread*: list of messages
@@ -193,77 +194,79 @@ Currently domain model reflects closely to what REST api's return. This need to 
 - errors: vector of errors
 - services: {
    :toaster obj
-   :featch obj
+   :fetch obj
 }
 
 #### Other notes
 
-* In future Prismatic schmema should be updated to core.spec.
+* In future Plumatic schema should be changed to core.spec.
 
 ### Handlers
 
-- Inintialization 
+- Initialization 
   - `[:initialize-db]` loads intial version of database.
-  - `[:registe-service service-obj]` Register helper function for dependency injection.
+  - `[:register-service service-obj]` Register helper function for dependency injection.
 - Navigation
   - `[:set-page page]` Change UI view.
 
-- Autentication related
-  - `[auth/login {:user username :pwd password}]`
-   - `[auth/login-success user-obj]`
-   - `[auth/login-error error-obj]`
+- Authentication related
+  - `[:auth/login {:user username :pwd password}]`
+   - `[:auth/login-success user-obj]`
+   - `[:auth/login-error error-obj]`
 
 - `[:message/send-to to-user-id content]`
   - `[:message/send-to-success message]`
   - `[:message/send-to-fail error]`
   
 
-Require refactoring. Currently support only one page and are clumsy to use.
-- `[inbox/fetch]` get users discussion threads form REST API
-  - `[inbox/fetch-success data]`
-  - `[inbox/fetch-failed error-obj]`
+#### Requires refactoring. 
+
+Currently support only one page and are clumsy to use.
+
+- `[:inbox/fetch]` get users discussion threads form REST API
+  - `[:inbox/fetch-success data]`
+  - `[:inbox/fetch-failed error-obj]`
 - `[:conversation/fetch user-id]` get conversion with given username
   - `[:conversation/fetch-success data]` 
   - `[:conversation/fetch-fail]`
-- `[show\conversation-with user-id]` Fetch discusison, move to conversation page and set current conversation (that should be shown to given user id).
+- `[:show/conversation-with user-id]` Fetch discusison, move to conversation page and set current conversation (that should be shown to given user id).
 
-
-Obsolete handlers 
+#### Obsolete handlers 
 - `[:load-db]` load whole db form local storage.
 - `[:save-db]` save whole db to local storage.
 - `[:set-db]` Helper for setting whole database.
-- `[:storage-error]` error in loadin or saving data to local storage.
+- `[:storage-error]` error in loading or saving data to local storage.
 - `[:logout]` Should be :auth/logout
 - `[:login user-pwd-obj]` us :auth/login instead.
 
 #### Handler ideas
 
-- `[sync/from-remote timestamp]` get all users, conversations related current user. This handls replaces :inbox and :converstion handlers
-  - `[sync/from-remote-success data]`
-  - `[sync/from-remote-failed data]`  
-- `[sync/from-local]` load data from local storage. This is run allways when user starts app. 
-  -  `[sync/from-local-success data]`
-  -  `[sync/from-local-fail error-data]` (possibly uses have not logged ever)
-- `[sync/to-local]`` save users, last-sync-timestam and inbox to local storage.
-  - `[sync/to-local-success]`
-  - `[sync/to-local-fail]`
+- `[:sync/from-remote timestamp]` get all users, conversations related current user. This handler replaces `:inbox and :conversation handlers
+  - `[:sync/from-remote-success data]`
+  - `[:sync/from-remote-failed data]`  
+- `[:sync/from-local]` load data from local storage. This is run always when user starts the app. 
+  -  `[:sync/from-local-success data]`
+  -  `[:sync/from-local-fail error-data]` (possibly user has never logged in)
+- `[:sync/to-local]` save users, last-sync-timestamp and inbox to local storage.
+  - `[:sync/to-local-success]`
+  - `[:sync/to-local-fail]`
 
 #### Other notes
 
-* In new version of re-frame events with and without side-effect are separated more in more elegent way. This should be upgraded at somepoint to never version.
+* In new version of re-frame events with and without side-effects are separated more in more elegent way. This should be upgraded at somepoint to never version.
 
 ### Subscriptions
 
 - `[:get-db]` returns db as is. This is mainly for testing in REPL, don't use it in any component.
-- `[:inbox/get]` Returns user convesation listing.
+- `[:inbox/get]` Returns user conversation listing.
 - `[:get-page]` Get currently active page.
-- `[:current-conversation]` Return currently active coveration (or nil)
-- `[:get-user-of-current-converation]` Get user id of person with whom user have converation with.
+- `[:current-conversation]` Return currently active conversation (or nil)
+- `[:get-user-of-current-converation]` Get user id of person with whom user have conversation with.
 - `[:auth-status]` Return object that informs if authentication is in progress and succeed and possible error, if authentication have failed.
 
 #### Notes
 
-Namesing should be consistent with handler. E.g. :current-conversation should be :coversation/current. 
+Naming should be consistent with handlers. E.g. :current-conversation should be :conversation/current. 
 
 ## License
 
