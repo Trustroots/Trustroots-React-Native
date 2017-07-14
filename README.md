@@ -181,7 +181,7 @@ Actual source code you should modify are in ./src/trustroots/ and ./test/ direct
 
 Currently domain model reflects closely to what REST api's return. This need to be changed as the app should support off-line use and rest APIs may not return all data (they page data). 
 
-### Proposall for new schema
+#### Proposall for new schema
 
 - users: map of all users curent use have had a converstion, or that are his friends. Key: Id, value: user-data
 - me: tells who of the user list is me. Id only
@@ -195,6 +195,10 @@ Currently domain model reflects closely to what REST api's return. This need to 
    :toaster obj
    :featch obj
 }
+
+#### Other notes
+
+* In future Prismatic schmema should be updated to core.spec.
 
 ### Handlers
 
@@ -232,7 +236,7 @@ Obsolete handlers
 - `[:logout]` Should be :auth/logout
 - `[:login user-pwd-obj]` us :auth/login instead.
 
-### Handler ideas
+#### Handler ideas
 
 - `[sync/from-remote timestamp]` get all users, conversations related current user. This handls replaces :inbox and :converstion handlers
   - `[sync/from-remote-success data]`
@@ -243,6 +247,23 @@ Obsolete handlers
 - `[sync/to-local]`` save users, last-sync-timestam and inbox to local storage.
   - `[sync/to-local-success]`
   - `[sync/to-local-fail]`
+
+#### Other notes
+
+* In new version of re-frame events with and without side-effect are separated more in more elegent way. This should be upgraded at somepoint to never version.
+
+### Subscriptions
+
+- `[:get-db]` returns db as is. This is mainly for testing in REPL, don't use it in any component.
+- `[:inbox/get]` Returns user convesation listing.
+- `[:get-page]` Get currently active page.
+- `[:current-conversation]` Return currently active coveration (or nil)
+- `[:get-user-of-current-converation]` Get user id of person with whom user have converation with.
+- `[:auth-status]` Return object that informs if authentication is in progress and succeed and possible error, if authentication have failed.
+
+#### Notes
+
+Namesing should be consistent with handler. E.g. :current-conversation should be :coversation/current. 
 
 ## License
 
