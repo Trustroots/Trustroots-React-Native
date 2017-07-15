@@ -7,8 +7,8 @@
     [trustroots.helpers :refer [log info debug]]
     [trustroots.db :as db]
     [trustroots.domain.auth :as auth]
-    [trustroots.api :as api]
-    ))
+    [trustroots.api :as api]))
+
 ;; -- Constants
 
 (def user-pwd-cache-key "user-pwd")
@@ -19,10 +19,10 @@
 (defn check-and-throw
   "throw an exception if db doesn't match the schema."
   [a-schema db]
-    (when-let [problems (s/check a-schema db)]
-      (info db)
-      (info problems)
-      (throw (js/Error. (str "Schema check failed: " problems)))))
+  (when-let [problems (s/check a-schema db)]
+    (info db)
+    (info problems)
+    (throw (js/Error. (str "Schema check failed: " problems)))))
 
 (def validate-schema-mw
   (if goog.DEBUG
@@ -94,8 +94,8 @@
      (fn [db evt]
        (-> db
            (remove-in-progress-event-for begin-api-event-key)
-           (#(apply error-fn (concat [%1] (rest evt)))))))
-    ))
+           (#(apply error-fn (concat [%1] (rest evt)))))))))
+
 
 ;; Generic handlers
 ;; -------------------------------------------------------------
@@ -122,6 +122,13 @@
 (register-handler-for
   :set-page
   (fn [db value]
+    (.log js/console value "############################# :set-page ######################")
+    (let [navigator (get-in db [:services :navigator])]
+      (.push navigator (clj->js {:index (-> navigator
+                                          (.getCurrentRoutes)
+                                          (.-length)
+                                          (+ 1))
+                                 :name (str value)})))
     (assoc-in db [:page] value)))
 
 ;; DB handlers
@@ -194,15 +201,16 @@
  :context-fn           (fn [db user] user)
  :success-fn           (fn [db user context]
                          (db/cache! user-pwd-cache-key context)
-                         
-                         (when (= (:page db) "login")
+                         (.log js/console "&&&&&&&&&&" (:page db))
+                         (when (= (:page db) :login)
+                           (.log js/console "&&&&&&&&&& dispatching!!")
                            (dispatch [:set-page :inbox]))
                          (-> db
                              (auth/set-user! user)))
  :error-fn             (fn [db]
                          (-> db
-                             (auth/set-error! "Authentication failed")))
- )
+                             (auth/set-error! "Authentication failed"))))
+
 
 (register-handler-for
   :auth-fail
@@ -228,8 +236,8 @@
  (fn [db mode]
    (when-let [toaster (get-in db [:services :toaster])]
             (log toaster)
-            (toaster "You are currently offline" 5000)
-            )
+            (toaster "You are currently offline" 5000))
+
    (assoc db :network-state mode)))
 
 ;; get inbox
@@ -240,7 +248,7 @@
    (let [get-messages api/inbox]
      (get-messages
       :on-success (fn [data]
-                    (dispatch [:inbox/fetch-success (:data data)] ))
+                    (dispatch [:inbox/fetch-success (:data data)]))
       :on-error
       #(condp = (:type %)
          :invalid-credentials (dispatch [:logout])
@@ -268,12 +276,12 @@
    (let [get-messages (partial api/conversation-with user-id)]
      (get-messages
       :on-success (fn [data]
-                    (dispatch [:conversation/fetch-success user-id (:data data)] ))
+                    (dispatch [:conversation/fetch-success user-id (:data data)]))
       :on-error
       #(condp = (:type %)
          :invalid-credentials (dispatch [:logout])
          :network-error       (do (dispatch [:set-offline true])
-                                  (dispatch [:conversation/fetch-fail user-id] ))
+                                  (dispatch [:conversation/fetch-fail user-id]))
          (dispatch [:unknown-error])))
 
      db)))
@@ -305,14 +313,14 @@
    (let [send-message (partial api/send-message-to to-user-id content)]
      (send-message
       :on-success (fn [data]
-                    (dispatch [:message/send-to-success to-user-id (:data data)] ))
+                    (dispatch [:message/send-to-success to-user-id (:data data)]))
       :on-error
       (fn [error]
         (log error)
         (condp = (:type error)
            :invalid-credentials (dispatch [:logout])
            :network-error       (do (dispatch [:set-offline true])
-                                  (dispatch [:message/send-to-fail to-user-id content] ))
+                                  (dispatch [:message/send-to-fail to-user-id content]))
            (dispatch [:unknown-error]))))
 
      db)))
@@ -337,8 +345,8 @@
       (.-NetInfo)
       (.-isConnected)
       (.fetch)
-      (.done #(dispatch [:set-offline (not %)])))
-  )
+      (.done #(dispatch [:set-offline (not %)]))))
+
 
 (register-handler-for
  :initialize-hardware
@@ -352,10 +360,8 @@
    ;    15000)
    db))
 
-(comment 
+(comment
 
-  (re-frame.core/dispatch [:set-page :inbox] )
+  (re-frame.core/dispatch [:set-page :inbox])
   (re-frame.core/dispatch [:inbox/fetch])
-  (re-frame.core/subscribe [:inbox/get] )
-
-)
+  (re-frame.core/subscribe [:inbox/get]))
