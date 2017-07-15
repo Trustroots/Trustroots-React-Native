@@ -19,21 +19,8 @@
 (defn alert [title]
       (.alert (.-Alert ReactNative) title))
 
-(defn app-root-old []
-  (let [greeting (subscribe [:get-greeting])]
-    (fn []
-      [view {:style {:flex-direction "column" :margin 40 :align-items "center"}}
-       [text {:style {:font-size 30 :font-weight "100" :margin-bottom 20 :text-align "center"}} @greeting]
-       [image {:source ui/logo-img
-               :style  {:width 144 :height 144 :margin-bottom 30}}]
-       [ui/button { :text "Add"
-                    :value "add"
-                    :raised true
-                    :on-press #(alert "HELLO!")}]])))
-
 (defn root-scene [{navigator :navigator name :name}]
   (fn []
-    (.log js/console name "$$$$$$$$$$$$$$$$$$$$$$$$$")
     [ui/view {:flex 1
               :style   (get-in s/styles [:page])}
 
@@ -54,13 +41,16 @@
 
 
 (defn app-root []
+  (-> ReactNative
+      (.-BackAndroid)
+      (.addEventListener "hardwareBackPress" #(do (dispatch [:navigate/back])
+                                                  true)))
   [ui/navigator {:initial-route   {:name ":login" :index 0}
                  :style           (get-in s/styles [:app])
                  :configure-scene (fn [_ _]
                                      js/React.Navigator.SceneConfigs.FloatFromBottomAndroid)
                  :render-scene    (fn [route navigator]
                                     (dispatch [:register-service :navigator navigator])
-                                    (.log js/console "RENDER SCENE" route)
                                     (r/as-element [root-scene {:navigator navigator :name (-> (js->clj route :keywordize-keys true)
                                                                                               (:name))}]))}])
 

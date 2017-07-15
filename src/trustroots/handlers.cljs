@@ -7,7 +7,8 @@
     [trustroots.helpers :refer [log info debug]]
     [trustroots.db :as db]
     [trustroots.domain.auth :as auth]
-    [trustroots.api :as api]))
+    [trustroots.api :as api]
+    [clojure.string :as str]))
 
 ;; -- Constants
 
@@ -122,7 +123,6 @@
 (register-handler-for
   :set-page
   (fn [db value]
-    (.log js/console value "############################# :set-page ######################")
     (let [navigator (get-in db [:services :navigator])]
       (.push navigator (clj->js {:index (-> navigator
                                           (.getCurrentRoutes)
@@ -130,6 +130,25 @@
                                           (+ 1))
                                  :name (str value)})))
     (assoc-in db [:page] value)))
+
+(register-handler-for
+  :navigate/back
+  (fn [db _]
+    (let [navigator (get-in db [:services :navigator])]
+      (if (< 1 (-> navigator
+                     (.getCurrentRoutes)
+                     (.-length)))
+          (do (.pop navigator)
+              (assoc-in db [:page] (-> navigator
+                                      (.getCurrentRoutes)
+                                      (js->clj :keywordize-keys true)
+                                      (butlast)
+                                      (last)
+                                      (:name)
+                                      (str/split #":")
+                                      (last)
+                                      (keyword))))
+          db))))
 
 ;; DB handlers
 ;; -------------------------------------------------------------
@@ -201,9 +220,7 @@
  :context-fn           (fn [db user] user)
  :success-fn           (fn [db user context]
                          (db/cache! user-pwd-cache-key context)
-                         (.log js/console "&&&&&&&&&&" (:page db))
                          (when (= (:page db) :login)
-                           (.log js/console "&&&&&&&&&& dispatching!!")
                            (dispatch [:set-page :inbox]))
                          (-> db
                              (auth/set-user! user)))
