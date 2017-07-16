@@ -1,17 +1,19 @@
 (ns trustroots.handlers
   (:require
     [clojure.walk :refer [keywordize-keys]]
-    [re-frame.core :refer [register-handler after dispatch]]
+    [re-frame.core :refer [register-handler after dispatch dispatch-sync]]
     [schema.core :as   s :include-macros true]
     [trustroots.domain.main :as main :refer [app-db schema]]
     [trustroots.helpers :refer [log info debug]]
     [trustroots.db :as db]
     [trustroots.domain.auth :as auth]
     [trustroots.api :as api]
-    ))
+    [clojure.string :as str]))
+
 ;; -- Constants
 
 (def user-pwd-cache-key "user-pwd")
+(def db-ignored-keys [:services])
 
 ;; -- Middleware ------------------------------------------------------------
 ;; See https://github.com/Day8/re-frame/wiki/Using-Handler-Middleware
@@ -19,10 +21,10 @@
 (defn check-and-throw
   "throw an exception if db doesn't match the schema."
   [a-schema db]
-    (when-let [problems (s/check a-schema db)]
-      (info db)
-      (info problems)
-      (throw (js/Error. (str "Schema check failed: " problems)))))
+  (when-let [problems (s/check a-schema db)]
+    (info db)
+    (info problems)
+    (throw (js/Error. (str "Schema check failed: " problems)))))
 
 (def validate-schema-mw
   (if goog.DEBUG
@@ -56,7 +58,7 @@
              params-fn
              success-fn
              error-fn
-             context-fn]}]
+             context-fn]}] ;; optional
 
   (let [on-success-key (keyword-with-suffix begin-api-event-key "/success")
         on-error-key (keyword-with-suffix begin-api-event-key "/error")]
@@ -94,8 +96,8 @@
      (fn [db evt]
        (-> db
            (remove-in-progress-event-for begin-api-event-key)
-           (#(apply error-fn (concat [%1] (rest evt)))))))
-    ))
+           (#(apply error-fn (concat [%1] (rest evt)))))))))
+
 
 ;; Generic handlers
 ;; -------------------------------------------------------------
@@ -122,7 +124,32 @@
 (register-handler-for
   :set-page
   (fn [db value]
+    (let [navigator (get-in db [:services :navigator])]
+      (.push navigator (clj->js {:index (-> navigator
+                                          (.getCurrentRoutes)
+                                          (.-length)
+                                          (+ 1))
+                                 :name (str value)})))
     (assoc-in db [:page] value)))
+
+(register-handler-for
+  :navigate/back
+  (fn [db _]
+    (let [navigator (get-in db [:services :navigator])]
+      (if (< 1 (-> navigator
+                     (.getCurrentRoutes)
+                     (.-length)))
+          (do (.pop navigator)
+              (assoc-in db [:page] (-> navigator
+                                      (.getCurrentRoutes)
+                                      (js->clj :keywordize-keys true)
+                                      (butlast)
+                                      (last)
+                                      (:name)
+                                      (str/split #":")
+                                      (last)
+                                      (keyword))))
+          db))))
 
 ;; DB handlers
 ;; -------------------------------------------------------------
@@ -153,17 +180,25 @@
 (register-handler-for
   :save-db
   (fn [db _]
-    (db/save! db #(dispatch [:storage-error :save-db %1]))
-    db))
+    (println db)
+    (let [db-filtered (apply dissoc db db-ignored-keys)]
+      (db/save! db-filtered #(dispatch [:storage-error :save-db %1]))
+      db)))
 
 ;; db handlers
 ;; -------------------------------------------------------------
 
-(register-handler-for
-  :logout
-  (fn [db _]
-    (dispatch [:save-db])
-    (auth/set-user! db nil)))
+; (register-handler-for
+;   :logout
+;   (fn [db _]
+;     (api/signout
+;       :on-success (fn []))
+;     (auth/set-user! db nil)
+;     (dispatch [:save-db])
+;     (dispatch [:set-page :login])
+;     (-> app-db
+;       (assoc :services (:services db)))))  ;; we need to preserve the instance of Navigator and Toaster
+
 
 (register-handler-for
  :login
@@ -194,15 +229,29 @@
  :context-fn           (fn [db user] user)
  :success-fn           (fn [db user context]
                          (db/cache! user-pwd-cache-key context)
-                         
-                         (when (= (:page db) "login")
+                         (when (= (:page db) :login)
                            (dispatch [:set-page :inbox]))
                          (-> db
                              (auth/set-user! user)))
  :error-fn             (fn [db]
                          (-> db
-                             (auth/set-error! "Authentication failed")))
- )
+                             (auth/set-error! "Authentication failed"))))
+
+(register-api-call-handler
+ :begin-api-event-key  :auth/logout
+ :api-call             api/signout
+ :params-fn            (fn [db _]
+                          {})
+ :success-fn           (fn [db _ _]
+                          (dispatch [:save-db])
+                          (db/cache! user-pwd-cache-key nil)
+                          (dispatch [:set-page :login])
+                          (-> app-db
+                            (assoc :services (:services db))))  ;; we need to preserve the instance of Navigator and Toaster
+ :error-fn             (fn [db]
+                         (-> db
+                             (auth/set-error! "Logout failed"))))
+
 
 (register-handler-for
   :auth-fail
@@ -228,8 +277,8 @@
  (fn [db mode]
    (when-let [toaster (get-in db [:services :toaster])]
             (log toaster)
-            (toaster "You are currently offline" 5000)
-            )
+            (toaster "You are currently offline" 5000))
+
    (assoc db :network-state mode)))
 
 ;; get inbox
@@ -240,7 +289,7 @@
    (let [get-messages api/inbox]
      (get-messages
       :on-success (fn [data]
-                    (dispatch [:inbox/fetch-success (:data data)] ))
+                    (dispatch [:inbox/fetch-success (:data data)]))
       :on-error
       #(condp = (:type %)
          :invalid-credentials (dispatch [:logout])
@@ -268,12 +317,12 @@
    (let [get-messages (partial api/conversation-with user-id)]
      (get-messages
       :on-success (fn [data]
-                    (dispatch [:conversation/fetch-success user-id (:data data)] ))
+                    (dispatch [:conversation/fetch-success user-id (:data data)]))
       :on-error
       #(condp = (:type %)
          :invalid-credentials (dispatch [:logout])
          :network-error       (do (dispatch [:set-offline true])
-                                  (dispatch [:conversation/fetch-fail user-id] ))
+                                  (dispatch [:conversation/fetch-fail user-id]))
          (dispatch [:unknown-error])))
 
      db)))
@@ -305,14 +354,14 @@
    (let [send-message (partial api/send-message-to to-user-id content)]
      (send-message
       :on-success (fn [data]
-                    (dispatch [:message/send-to-success to-user-id (:data data)] ))
+                    (dispatch [:message/send-to-success to-user-id (:data data)]))
       :on-error
       (fn [error]
         (log error)
         (condp = (:type error)
            :invalid-credentials (dispatch [:logout])
            :network-error       (do (dispatch [:set-offline true])
-                                  (dispatch [:message/send-to-fail to-user-id content] ))
+                                  (dispatch [:message/send-to-fail to-user-id content]))
            (dispatch [:unknown-error]))))
 
      db)))
@@ -337,8 +386,8 @@
       (.-NetInfo)
       (.-isConnected)
       (.fetch)
-      (.done #(dispatch [:set-offline (not %)])))
-  )
+      (.done #(dispatch [:set-offline (not %)]))))
+
 
 (register-handler-for
  :initialize-hardware
@@ -352,10 +401,8 @@
    ;    15000)
    db))
 
-(comment 
+(comment
 
-  (re-frame.core/dispatch [:set-page :inbox] )
+  (re-frame.core/dispatch [:set-page :inbox])
   (re-frame.core/dispatch [:inbox/fetch])
-  (re-frame.core/subscribe [:inbox/get] )
-
-)
+  (re-frame.core/subscribe [:inbox/get]))
