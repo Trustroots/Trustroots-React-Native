@@ -2,8 +2,8 @@
   (:require-macros [reagent.ratom   :refer [reaction]])
   (:require [re-frame.core          :refer [register-sub]]
             [trustroots.domain.auth :as auth]
-            [trustroots.helpers :refer [log info debug]]
-            ))
+            [trustroots.helpers :refer [log info debug]]))
+
 
 ; Helpers
 ; ---------------------------------------------------------------
@@ -47,8 +47,8 @@
                   (if (= (:_id user-to) my-id)
                     user-from
                     user-to))))
-       inbox)
-      )))
+       inbox))))
+
 
 ;; Navigation handlers
 ;; -------------------------------------------------------------
@@ -83,15 +83,20 @@
    (let [selected-user (get @db :message/current-conversation)]
      (->>
       (get-in @db [:message/conversation-with selected-user])
+      (sort-by :created)
       (map #(assoc
              %1
              :is-from-someone-else
              (= selected-user
-                (get-in %1 [:userFrom :_id])
-                               ))))
-              )))
+                (get-in %1 [:userFrom :_id]))))))))
 
 (register-sub-for
  :get-user-of-current-conversation
  (fn [db _]
    (get @db :message/current-conversation)))
+
+(register-sub-for
+  :message/get-draft-with
+  (fn [db _]
+    (let [selected-user (get @db :message/current-conversation)]
+      (get-in @db [:message/draft-with selected-user]))))

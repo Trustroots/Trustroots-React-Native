@@ -16,6 +16,7 @@
           :message/inbox                [s/Any]
           :message/conversation-with    {;;user-id | Messages (from /api/messages/{user-id})
                                          (s/maybe s/Str) [s/Any]}
+          :message/draft-with           {(s/maybe s/Str) s/Str}
 
           :message/current-conversation (s/maybe s/Str)
           :request-in-progress          [s/Keyword]}))
@@ -30,6 +31,7 @@
           :network-state                :not-initialized
           :message/inbox                []
           :message/conversation-with    {}
+          :message/draft-with           {}
           :message/current-conversation nil
           :request-in-progress          []}))
 
