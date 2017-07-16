@@ -30,7 +30,7 @@
         excerpt       (get-in row [:message :excerpt])
         message-count (get-in row [:message :excerpt])
         read          (get-in row [:read])
-        bg-color      (if read "white" "#AAAAFF")
+        bg-color      (if read "white" "#eaf4f1")
         relative-time (to-now (:updated row))]
 
 
@@ -40,13 +40,12 @@
             :flex -1
             ;           :flex-direction "row"
             :flex-direction "column"
-            :background-color :yellow
             :margin 1}
       [ui/card-with-gravatar
        { :message excerpt
         :name partner-name
         :time relative-time
-        :background-colpropsor bg-color
+        :background-color bg-color
         :avatar-image image-url
         :on-press (fn []
                     (dispatch [:show/conversation-with partner-id]))}]]))
@@ -60,7 +59,7 @@
                      :margin 20
                      :flex 1
                      :align-items "stretch"}}
-       [list-view-with-subscription messages list-view-item "Messages"]
+       [list-view-with-subscription messages list-view-item "MESSAGES"]
        [ui/button { :text "Refresh"
                     :value "refresh"
                     :raised true

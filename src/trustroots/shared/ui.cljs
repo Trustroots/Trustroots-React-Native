@@ -51,13 +51,13 @@
 (defn trustroots-avatar [image-url]
   (if image-url
     [avatar {:image (image-component image-url) :size 50 :backgroundColor "paperLime"}]
-    [avatar {:icon "person" :size 50 :backgroundColor "paperLime"}])
-  )
+    [avatar {:icon "person" :size 50 :backgroundColor "paperLime"}]))
 
 (def button            (r/adapt-react-class (.-Button          js/MaterialDesign)))
 (def drawer-layout     (r/adapt-react-class (.-Drawer          js/MaterialDesign)))
 (def drawer-header     (r/adapt-react-class (.-Drawer.Header   js/MaterialDesign)))
 (def drawer-section    (r/adapt-react-class (.-Drawer.Section  js/MaterialDesign)))
+(def Toolbar           (r/adapt-react-class (.-Toolbar         js/MaterialDesign)))
 
 (def PRIMARY_COLORS    (vec (map keyword (js->clj (.-PRIMARY_COLORS js/MaterialDesign)))))
 
@@ -66,8 +66,8 @@
 (def html-view (r/adapt-react-class (get (js->clj (js/require "react-native-htmlview")) "default")))
 
 (defn show-toast [message duration & gravity]
-  (.ToastAndroid.show ReactNative message duration gravity)
-  )
+  (.ToastAndroid.show ReactNative message duration gravity))
+
 
 ;; Message
 ;; =======
@@ -87,37 +87,37 @@
                {:flex 1
                 :flex-direction "row"
                 :align-items "flex-start"
-                :margin 2
-                }}
+                :margin 2}}
+
          [view
-          [trustroots-avatar avatar-image]
-          ]
+          [trustroots-avatar avatar-image]]
+
          [view {:style {:flex 1
                         :flex-direction "column"
                         :align-items "stretch"
-                        :margin-left 10
-                        }}
+                        :margin-left 10}}
+
           [text {:style {:font-weight "bold"
-                         :font-size 16 }}
+                         :font-size 16}}
            name]
-          [html-view {:value message }]]
-         ]
+          [html-view {:value message}]]]
+
         [view {:style {:height 20
-                       :align-items "flex-end"
-                       }}
+                       :align-items "flex-end"}}
+
          [view {:style {:flex 3
                         :flex-direction "row"
-                        :align-items "center"
-                        }}
+                        :align-items "center"}}
+
           [icon {:name "schedule"}]
-          [text {:style{:margin-left 5} } time]
-          ]
-         ]
-        ]
-       ]
-      ]
-     ]
-    ))
+          [text {:style{:margin-left 5} } time]]]]]]]))
+
+
+
+
+
+
+
 
 
 ;; Typography
@@ -146,4 +146,3 @@
            :margin-bottom 20
            :text-align "center"}} s]
 )
-
