@@ -10,15 +10,15 @@
 (defn get-image-url [user]
   (let [source (:avatarSource user)
         id     (:_id user)
-        emailHash (:emailHash user)
-        ]
-  (case (:avatarSource user)
-    "local" (str
-             "https://www.trustroots.org/modules/users/img/profile/uploads/"
-             id
-             "/avatar/32.jpg")
-    "gravatar" (str "https://www.gravatar.com/avatar/" emailHash) 
-    nil )))
+        emailHash (:emailHash user)]
+
+   (case (:avatarSource user)
+     "local" (str
+              "https://www.trustroots.org/modules/users/img/profile/uploads/"
+              id
+              "/avatar/32.jpg")
+     "gravatar" (str "https://www.gravatar.com/avatar/" emailHash)
+     nil)))
 
 
 
@@ -31,8 +31,8 @@
         message-count (get-in row [:message :excerpt])
         read          (get-in row [:read])
         bg-color      (if read "white" "#AAAAFF")
-        relative-time (to-now (:updated row))
-        ]
+        relative-time (to-now (:updated row))]
+
 
     ^{:key (:_id row)}
      [view {
@@ -49,9 +49,9 @@
         :background-colpropsor bg-color
         :avatar-image image-url
         :on-press (fn []
-                    (dispatch [:show/conversation-with partner-id]))}]
-     ]
-   ))
+                    (dispatch [:show/conversation-with partner-id]))}]]))
+
+
 
 (defn inbox-page [{style :style}]
   (let [messages (subscribe [:inbox/get])]
@@ -68,8 +68,4 @@
        [ui/button { :text "Logout"
                     :value "logout"
                     :raised true
-                    :on-press #(dispatch [:logout])}]
-      ])))
-
-
-
+                    :on-press #(dispatch [:auth/logout])}]])))
