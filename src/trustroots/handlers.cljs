@@ -1,7 +1,7 @@
 (ns trustroots.handlers
   (:require
     [clojure.walk :refer [keywordize-keys]]
-    [re-frame.core :refer [register-handler after dispatch]]
+    [re-frame.core :refer [register-handler after dispatch dispatch-sync]]
     [schema.core :as   s :include-macros true]
     [trustroots.domain.main :as main :refer [app-db schema]]
     [trustroots.helpers :refer [log info debug]]
@@ -13,6 +13,7 @@
 ;; -- Constants
 
 (def user-pwd-cache-key "user-pwd")
+(def db-ignored-keys [:services])
 
 ;; -- Middleware ------------------------------------------------------------
 ;; See https://github.com/Day8/re-frame/wiki/Using-Handler-Middleware
@@ -57,7 +58,7 @@
              params-fn
              success-fn
              error-fn
-             context-fn]}]
+             context-fn]}] ;; optional
 
   (let [on-success-key (keyword-with-suffix begin-api-event-key "/success")
         on-error-key (keyword-with-suffix begin-api-event-key "/error")]
@@ -179,17 +180,25 @@
 (register-handler-for
   :save-db
   (fn [db _]
-    (db/save! db #(dispatch [:storage-error :save-db %1]))
-    db))
+    (println db)
+    (let [db-filtered (apply dissoc db db-ignored-keys)]
+      (db/save! db-filtered #(dispatch [:storage-error :save-db %1]))
+      db)))
 
 ;; db handlers
 ;; -------------------------------------------------------------
 
-(register-handler-for
-  :logout
-  (fn [db _]
-    (dispatch [:save-db])
-    (auth/set-user! db nil)))
+; (register-handler-for
+;   :logout
+;   (fn [db _]
+;     (api/signout
+;       :on-success (fn []))
+;     (auth/set-user! db nil)
+;     (dispatch [:save-db])
+;     (dispatch [:set-page :login])
+;     (-> app-db
+;       (assoc :services (:services db)))))  ;; we need to preserve the instance of Navigator and Toaster
+
 
 (register-handler-for
  :login
@@ -227,6 +236,21 @@
  :error-fn             (fn [db]
                          (-> db
                              (auth/set-error! "Authentication failed"))))
+
+(register-api-call-handler
+ :begin-api-event-key  :auth/logout
+ :api-call             api/signout
+ :params-fn            (fn [db _]
+                          {})
+ :success-fn           (fn [db _ _]
+                          (dispatch [:save-db])
+                          (db/cache! user-pwd-cache-key nil)
+                          (dispatch [:set-page :login])
+                          (-> app-db
+                            (assoc :services (:services db))))  ;; we need to preserve the instance of Navigator and Toaster
+ :error-fn             (fn [db]
+                         (-> db
+                             (auth/set-error! "Logout failed"))))
 
 
 (register-handler-for
