@@ -8,12 +8,9 @@
 ;; schema of app-db
 (def schema
   (merge auth/schema
-         {
-          :services {
-                     :toaster (s/maybe s/Any)
-                     }
+         {:services { :toaster (s/maybe s/Any) }
           :off-line s/Bool
-          :page     (s/enum :login :inbox :conversation)
+          :page     (s/enum :login :inbox :conversation :site)
           :network-state s/Any
           ;; user inbox from /api/messages
           :message/inbox [s/Any]
@@ -28,17 +25,17 @@
 
 ;; initial state of app-db
 (def app-db
-  (merge auth/app-db
-         {
-          :services {:toaster nil}
-          :off-line   true
-          :page       :inbox
-          :network-state :not-initialized
-          :message/inbox []
-          :message/conversation-with {}
-          :message/current-conversation nil
-          :request-in-progress []
-          }))
+  (merge
+   auth/app-db
+   {:services {:toaster nil}
+    :off-line   true
+    :page       :inbox
+    :network-state :not-initialized
+    :message/inbox []
+    :message/conversation-with {}
+    :message/current-conversation nil
+    :request-in-progress []
+    }))
 
 (defn set-offline! [db state]
   (assoc db :off-line state ))
