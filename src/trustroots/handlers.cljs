@@ -1,13 +1,13 @@
 (ns trustroots.handlers
   (:require [clojure.walk :refer [keywordize-keys]]
+            [reagent.core :as reagent]
             [re-frame.core :refer [register-handler after dispatch dispatch-sync]]
             [schema.core :as   s :include-macros true]
             [trustroots.domain.main :as main :refer [app-db schema]]
-            [trustroots.helpers :refer [log info debug]]
+            [trustroots.helpers :refer [log info debug current-route]]
             [trustroots.db :as db]
             [trustroots.domain.auth :as auth]
-            [trustroots.api :as api]
-            [clojure.string :as str]))
+            [trustroots.api :as api]))
 
 ;; -- Constants
 
@@ -138,15 +138,7 @@
                   (.getCurrentRoutes)
                   (.-length)))
        (do (.pop navigator)
-           (assoc-in db [:page] (-> navigator
-                                    (.getCurrentRoutes)
-                                    (js->clj :keywordize-keys true)
-                                    (butlast)
-                                    (last)
-                                    (:name)
-                                    (str/split #":")
-                                    (last)
-                                    (keyword))))
+           (assoc-in db [:page] (current-route navigator)))
        db))))
 
 ;; DB handlers
@@ -345,9 +337,22 @@
 ;; ------------
 
 (register-handler-for
- :message/send-to
+ :flush
+ (fn [db _]
+   (reagent/flush)
+   db))
+
+(register-handler-for
+ :message/update-draft-with
  (fn [db to-user-id content]
-   (let [send-message (partial api/send-message-to to-user-id content)]
+   (dispatch [:flush])
+   (assoc-in db [:message/draft-with to-user-id] content)))
+
+(register-handler-for
+ :message/send-to
+ (fn [db to-user-id]
+   (let [content (get-in db [:message/draft-with to-user-id])
+         send-message (partial api/send-message-to to-user-id content)]
      (send-message
       :on-success (fn [data]
                     (dispatch [:message/send-to-success to-user-id (:data data)]))
@@ -360,7 +365,7 @@
                                    (dispatch [:message/send-to-fail to-user-id content]))
           (dispatch [:unknown-error]))))
 
-     db)))
+     (assoc-in db [:message/draft-with to-user-id] ""))))
 
 (register-handler-for
  :message/send-to-success

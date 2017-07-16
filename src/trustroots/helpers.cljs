@@ -1,25 +1,26 @@
 (ns trustroots.helpers
   (:refer-clojure :exclude [hash])
-  (:require 
+  (:require
    [goog.crypt     :as gcrypt]
-   [goog.crypt.Sha256 :as Sha256])
-  )
+   [goog.crypt.Sha256 :as Sha256]
+   [clojure.string :as str]))
+
 (defn string->bytes [s]
   (gcrypt/stringToUtf8ByteArray s))  ;; must be utf8 byte array
 
-(defn bytes->hex 
+(defn bytes->hex
   "convert bytes to hex"
   [bytes-in]
   (gcrypt/byteArrayToHex bytes-in))
 
 (defn hash-bytes [digester bytes-in]
-  (do 
+  (do
     (.update digester bytes-in)
     (.digest digester)))
 
 (defn sha256-bytes->bytes
   "convert bytes to md5 bytes"
-  [bytes-in] 
+  [bytes-in]
   (hash-bytes (goog.crypt.Sha256.) bytes-in))
 
 (defn sha256-string->bytes
@@ -73,3 +74,15 @@
    (moment timeString)
    (.fromNow )))
 
+;; returns the keyword of the current route
+(defn current-route
+  [navigator]
+  (-> navigator
+    (.getCurrentRoutes)
+    (js->clj :keywordize-keys true)
+    ; (butlast)
+    (last)
+    (:name)
+    (str/split #":")
+    (last)
+    (keyword)))
