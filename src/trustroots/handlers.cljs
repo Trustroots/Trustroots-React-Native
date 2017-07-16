@@ -126,8 +126,7 @@
    (let [navigator (get-in db [:services :navigator])]
      (.push navigator (clj->js {:index (-> navigator
                                            (.getCurrentRoutes)
-                                           (.-length)
-                                           (+ 1))
+                                           (.-length))
                                 :name (str value)})))
    (assoc-in db [:page] value)))
 
