@@ -34,7 +34,6 @@
       ;;                   :on-icon-press (fn [_]
       ;;                                 (.openDrawer @drawer))}]
       (case name
-        ; ":inbox"        [inbox-page  {:style (get-in s/styles [:pages :main])}]
         ":inbox"        [inbox-page  {:style (get-in s/styles [:pages :main])}]
         ":conversation" [conversation-page  {:style (get-in s/styles [:pages :main])}]
         ":login"        [login-page {:style (get-in s/styles [:pages :login])}])]))
