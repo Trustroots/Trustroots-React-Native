@@ -12,14 +12,13 @@
         id     (:_id user)
         emailHash (:emailHash user)
         ]
-  (case (:avatarSource user)
-    "local" (str
-             "https://www.trustroots.org/modules/users/img/profile/uploads/"
-             id
-             "/avatar/32.jpg")
-    "gravatar" (str "https://www.gravatar.com/avatar/" emailHash) 
-    nil )))
-
+    (case (:avatarSource user)
+      "local" (str
+               "https://www.trustroots.org/modules/users/img/profile/uploads/"
+               id
+               "/avatar/32.jpg")
+      "gravatar" (str "https://www.gravatar.com/avatar/" emailHash)
+      nil )))
 
 
 (defn list-view-item [row]
@@ -35,23 +34,22 @@
         ]
 
     ^{:key (:_id row)}
-     [view {
-            ;           :flex 1
-            :flex -1
-            ;           :flex-direction "row"
-            :flex-direction "column"
-            :background-color :yellow
-            :margin 1}
-      [ui/card-with-gravatar
-       { :message excerpt
-        :name partner-name
-        :time relative-time
-        :background-colpropsor bg-color
-        :avatar-image image-url
-        :on-press (fn []
-                    (dispatch [:show/conversation-with partner-id]))}]
-     ]
-   ))
+    [view {
+           ;; :flex 1
+           :flex -1
+           ;; :flex-direction "row"
+           :flex-direction "column"
+           :background-color :yellow
+           :margin 1}
+     [ui/card-with-gravatar
+      {:message excerpt
+       :name partner-name
+       :time relative-time
+       :background-colpropsor bg-color
+       :avatar-image image-url
+       :on-press
+       (fn []
+         (dispatch [:show/conversation-with partner-id]))}]]))
 
 (defn inbox-page [{style :style}]
   (let [messages (subscribe [:inbox/get])]
@@ -61,15 +59,12 @@
                      :flex 1
                      :align-items "stretch"}}
        [list-view-with-subscription messages list-view-item "Messages"]
-       [ui/button { :text "Refresh"
-                    :value "refresh"
-                    :raised true
-                    :on-press #(dispatch [:inbox/fetch])}]
-       [ui/button { :text "Logout"
-                    :value "logout"
-                    :raised true
-                    :on-press #(dispatch [:logout])}]
-      ])))
-
-
-
+       [ui/button {:text "Refresh"
+                   :value "refresh"
+                   :raised true
+                   :on-press #(dispatch [:inbox/fetch])}]
+       [ui/button {:text "Logout"
+                   :value "logout"
+                   :raised true
+                   :on-press #(dispatch [:logout])}]
+       ])))

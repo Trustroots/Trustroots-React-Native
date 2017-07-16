@@ -13,13 +13,13 @@
         id     (:_id user)
         emailHash (:emailHash user)
         ]
-  (case (:avatarSource user)
-    "local" (str
-             "https://www.trustroots.org/modules/users/img/profile/uploads/"
-             id
-             "/avatar/32.jpg")
-    "gravatar" (str "https://www.gravatar.com/avatar/" emailHash) 
-    nil )))
+    (case (:avatarSource user)
+      "local" (str
+               "https://www.trustroots.org/modules/users/img/profile/uploads/"
+               id
+               "/avatar/32.jpg")
+      "gravatar" (str "https://www.gravatar.com/avatar/" emailHash)
+      nil )))
 
 (defn list-view-item [message]
   (let [is-someone-else  (:is-from-someone-else message)
@@ -30,7 +30,7 @@
       [view
        {
         :style {
-                ;:background-color "red"
+                ;;:background-color "red"
                 :flex -1
                 :flex-direction "row"
                 :align-items "flex-start"
@@ -57,8 +57,7 @@
 
 (defn conversation-page [{style :style}]
   (let [messages (subscribe [:current-conversation])
-        target-user (subscribe [:get-user-of-current-conversation])
-        ]
+        target-user (subscribe [:get-user-of-current-conversation])]
     (fn []
       [view {:style {:flex-direction "column"
                      :margin 20
@@ -79,7 +78,7 @@
                    {
                     :flex 1
                     :align-self "flex-start"
-                   }
+                    }
                    :on-end-editing (fn [value]
                                      (re-frame.core/dispatch
                                       [
@@ -89,8 +88,6 @@
                                            .-nativeEvent
                                            .-text)]))
 
-                    }]
+                   }]
         ]
-      ])))
- 
-
+       ])))

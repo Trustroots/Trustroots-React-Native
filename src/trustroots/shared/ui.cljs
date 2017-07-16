@@ -18,7 +18,9 @@
 (def scroll-view (r/adapt-react-class (.-ScrollView  ReactNative)))
 (def input       (r/adapt-react-class (.-TextInput   ReactNative)))
 (def touchable-highlight
-                 (r/adapt-react-class (.-TouchableHighlight ReactNative)))
+  (r/adapt-react-class (.-TouchableHighlight ReactNative)))
+(def web-view    (r/adapt-react-class (.-WebView ReactNative)))
+
 (defn alert [title] (.alert (.-Alert ReactNative) title))
 
 (def navigator

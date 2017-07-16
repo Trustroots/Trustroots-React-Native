@@ -1,14 +1,12 @@
 (ns trustroots.handlers
-  (:require
-    [clojure.walk :refer [keywordize-keys]]
-    [re-frame.core :refer [register-handler after dispatch]]
-    [schema.core :as   s :include-macros true]
-    [trustroots.domain.main :as main :refer [app-db schema]]
-    [trustroots.helpers :refer [log info debug]]
-    [trustroots.db :as db]
-    [trustroots.domain.auth :as auth]
-    [trustroots.api :as api]
-    ))
+  (:require [clojure.walk :refer [keywordize-keys]]
+            [re-frame.core :refer [register-handler after dispatch]]
+            [schema.core :as   s :include-macros true]
+            [trustroots.domain.main :as main :refer [app-db schema]]
+            [trustroots.helpers :refer [log info debug]]
+            [trustroots.db :as db]
+            [trustroots.domain.auth :as auth]
+            [trustroots.api :as api]))
 ;; -- Constants
 
 (def user-pwd-cache-key "user-pwd")
@@ -19,10 +17,10 @@
 (defn check-and-throw
   "throw an exception if db doesn't match the schema."
   [a-schema db]
-    (when-let [problems (s/check a-schema db)]
-      (info db)
-      (info problems)
-      (throw (js/Error. (str "Schema check failed: " problems)))))
+  (when-let [problems (s/check a-schema db)]
+    (info db)
+    (info problems)
+    (throw (js/Error. (str "Schema check failed: " problems)))))
 
 (def validate-schema-mw
   (if goog.DEBUG
@@ -36,11 +34,11 @@
   "Simplify register handler calls by automatically registring middleware
    and by droping event name from event arguments"
   (register-handler
-    event-name
-    validate-schema-mw
-    (fn [db evt]
-      (debug (str "Dispatch " event-name))
-      (apply handler-fn (concat [db] (rest evt))))))
+   event-name
+   validate-schema-mw
+   (fn [db evt]
+     (debug (str "Dispatch " event-name))
+     (apply handler-fn (concat [db] (rest evt))))))
 
 (defn add-in-progress-event-for [db event-key] db)
 
@@ -101,13 +99,13 @@
 ;; -------------------------------------------------------------
 
 (register-handler-for
-  :initialize-db
-  (fn [_ _]
-    (info app-db)
-    (db/cache-load user-pwd-cache-key
-                (fn [data] (dispatch [:auth/login data]))
-                identity)
-    app-db))
+ :initialize-db
+ (fn [_ _]
+   (info app-db)
+   (db/cache-load user-pwd-cache-key
+                  (fn [data] (dispatch [:auth/login data]))
+                  identity)
+   app-db))
 
 
 (register-handler-for
@@ -120,50 +118,50 @@
 ;; -------------------------------------------------------------
 
 (register-handler-for
-  :set-page
-  (fn [db value]
-    (assoc-in db [:page] value)))
+ :set-page
+ (fn [db value]
+   (assoc-in db [:page] value)))
 
 ;; DB handlers
 ;; -------------------------------------------------------------
 
 (register-handler-for
-  :set-db
-  (fn [db new-state]
-    (if-let [problems (s/check schema new-state)]
-      (do
-        (log problems)
-        db)
-      new-state)))
+ :set-db
+ (fn [db new-state]
+   (if-let [problems (s/check schema new-state)]
+     (do
+       (log problems)
+       db)
+     new-state)))
 
 
 (register-handler-for
  :storage-error
  (fn [db err-event error]
    (log error)
-   ; currently do nothing error handling should be here
+   ;; currently do nothing error handling should be here
    db))
 
 (register-handler-for
-  :load-db
-  (fn [db _]
-    (db/load #(dispatch [:set-db %1]) #(dispatch [:storage-error :load-db %1]))
-    db))
+ :load-db
+ (fn [db _]
+   (db/load #(dispatch [:set-db %1]) #(dispatch [:storage-error :load-db %1]))
+   db))
 
 (register-handler-for
-  :save-db
-  (fn [db _]
-    (db/save! db #(dispatch [:storage-error :save-db %1]))
-    db))
+ :save-db
+ (fn [db _]
+   (db/save! db #(dispatch [:storage-error :save-db %1]))
+   db))
 
 ;; db handlers
 ;; -------------------------------------------------------------
 
 (register-handler-for
-  :logout
-  (fn [db _]
-    (dispatch [:save-db])
-    (auth/set-user! db nil)))
+ :logout
+ (fn [db _]
+   (dispatch [:save-db])
+   (auth/set-user! db nil)))
 
 (register-handler-for
  :login
@@ -194,7 +192,7 @@
  :context-fn           (fn [db user] user)
  :success-fn           (fn [db user context]
                          (db/cache! user-pwd-cache-key context)
-                         
+
                          (when (= (:page db) "login")
                            (dispatch [:set-page :inbox]))
                          (-> db
@@ -205,31 +203,30 @@
  )
 
 (register-handler-for
-  :auth-fail
-  (fn [db error]
-    (-> db
-        (auth/set-in-progress! false)
-        (auth/set-user!        nil)
-        (auth/set-error!       "Authentication failed"))))
+ :auth-fail
+ (fn [db error]
+   (-> db
+       (auth/set-in-progress! false)
+       (auth/set-user!        nil)
+       (auth/set-error!       "Authentication failed"))))
 
 (register-handler-for
-  :auth-success
-  (fn [db user]
-    (dispatch [:save-db])
-    (when (= (:page db) "login")
-      (dispatch [:set-page :inbox]))
-    (-> db
-        (auth/set-in-progress! false)
-        (auth/set-user!        user)
-        (auth/set-error!       nil))))
+ :auth-success
+ (fn [db user]
+   (dispatch [:save-db])
+   (when (= (:page db) "login")
+     (dispatch [:set-page :inbox]))
+   (-> db
+       (auth/set-in-progress! false)
+       (auth/set-user!        user)
+       (auth/set-error!       nil))))
 
 (register-handler-for
  :set-offline
  (fn [db mode]
    (when-let [toaster (get-in db [:services :toaster])]
-            (log toaster)
-            (toaster "You are currently offline" 5000)
-            )
+     (log toaster)
+     (toaster "You are currently offline" 5000))
    (assoc db :network-state mode)))
 
 ;; get inbox
@@ -287,7 +284,6 @@
  :conversation/fetch-fail
  (fn [db user-id] db))
 
-
 (register-handler-for
  :show/conversation-with
  (fn [db user-id]
@@ -310,10 +306,10 @@
       (fn [error]
         (log error)
         (condp = (:type error)
-           :invalid-credentials (dispatch [:logout])
-           :network-error       (do (dispatch [:set-offline true])
-                                  (dispatch [:message/send-to-fail to-user-id content] ))
-           (dispatch [:unknown-error]))))
+          :invalid-credentials (dispatch [:logout])
+          :network-error       (do (dispatch [:set-offline true])
+                                   (dispatch [:message/send-to-fail to-user-id content] ))
+          (dispatch [:unknown-error]))))
 
      db)))
 
@@ -347,15 +343,12 @@
    ;; check once
    ;; Currently any way to check NetInfo does not work
    ;; This is left here as warning
-   ;(js/setTimeout
-   ;    check-nework-state
-   ;    15000)
+   ;;(js/setTimeout
+   ;;    check-nework-state
+   ;;    15000)
    db))
 
-(comment 
-
+(comment
   (re-frame.core/dispatch [:set-page :inbox] )
   (re-frame.core/dispatch [:inbox/fetch])
-  (re-frame.core/subscribe [:inbox/get] )
-
-)
+  (re-frame.core/subscribe [:inbox/get] ))
