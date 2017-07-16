@@ -1,14 +1,13 @@
 (ns trustroots.handlers
-  (:require
-    [clojure.walk :refer [keywordize-keys]]
-    [re-frame.core :refer [register-handler after dispatch dispatch-sync]]
-    [schema.core :as   s :include-macros true]
-    [trustroots.domain.main :as main :refer [app-db schema]]
-    [trustroots.helpers :refer [log info debug]]
-    [trustroots.db :as db]
-    [trustroots.domain.auth :as auth]
-    [trustroots.api :as api]
-    [clojure.string :as str]))
+  (:require [clojure.walk :refer [keywordize-keys]]
+            [re-frame.core :refer [register-handler after dispatch dispatch-sync]]
+            [schema.core :as   s :include-macros true]
+            [trustroots.domain.main :as main :refer [app-db schema]]
+            [trustroots.helpers :refer [log info debug]]
+            [trustroots.db :as db]
+            [trustroots.domain.auth :as auth]
+            [trustroots.api :as api]
+            [clojure.string :as str]))
 
 ;; -- Constants
 
@@ -38,11 +37,11 @@
   "Simplify register handler calls by automatically registring middleware
    and by droping event name from event arguments"
   (register-handler
-    event-name
-    validate-schema-mw
-    (fn [db evt]
-      (debug (str "Dispatch " event-name))
-      (apply handler-fn (concat [db] (rest evt))))))
+   event-name
+   validate-schema-mw
+   (fn [db evt]
+     (debug (str "Dispatch " event-name))
+     (apply handler-fn (concat [db] (rest evt))))))
 
 (defn add-in-progress-event-for [db event-key] db)
 
@@ -103,13 +102,13 @@
 ;; -------------------------------------------------------------
 
 (register-handler-for
-  :initialize-db
-  (fn [_ _]
-    (info app-db)
-    (db/cache-load user-pwd-cache-key
-                (fn [data] (dispatch [:auth/login data]))
-                identity)
-    app-db))
+ :initialize-db
+ (fn [_ _]
+   (info app-db)
+   (db/cache-load user-pwd-cache-key
+                  (fn [data] (dispatch [:auth/login data]))
+                  identity)
+   app-db))
 
 
 (register-handler-for
@@ -122,83 +121,82 @@
 ;; -------------------------------------------------------------
 
 (register-handler-for
-  :set-page
-  (fn [db value]
-    (let [navigator (get-in db [:services :navigator])]
-      (.push navigator (clj->js {:index (-> navigator
-                                          (.getCurrentRoutes)
-                                          (.-length)
-                                          (+ 1))
-                                 :name (str value)})))
-    (assoc-in db [:page] value)))
+ :set-page
+ (fn [db value]
+   (let [navigator (get-in db [:services :navigator])]
+     (.push navigator (clj->js {:index (-> navigator
+                                           (.getCurrentRoutes)
+                                           (.-length)
+                                           (+ 1))
+                                :name (str value)})))
+   (assoc-in db [:page] value)))
 
 (register-handler-for
-  :navigate/back
-  (fn [db _]
-    (let [navigator (get-in db [:services :navigator])]
-      (if (< 1 (-> navigator
-                     (.getCurrentRoutes)
-                     (.-length)))
-          (do (.pop navigator)
-              (assoc-in db [:page] (-> navigator
-                                      (.getCurrentRoutes)
-                                      (js->clj :keywordize-keys true)
-                                      (butlast)
-                                      (last)
-                                      (:name)
-                                      (str/split #":")
-                                      (last)
-                                      (keyword))))
-          db))))
+ :navigate/back
+ (fn [db _]
+   (let [navigator (get-in db [:services :navigator])]
+     (if (< 1 (-> navigator
+                  (.getCurrentRoutes)
+                  (.-length)))
+       (do (.pop navigator)
+           (assoc-in db [:page] (-> navigator
+                                    (.getCurrentRoutes)
+                                    (js->clj :keywordize-keys true)
+                                    (butlast)
+                                    (last)
+                                    (:name)
+                                    (str/split #":")
+                                    (last)
+                                    (keyword))))
+       db))))
 
 ;; DB handlers
 ;; -------------------------------------------------------------
 
 (register-handler-for
-  :set-db
-  (fn [db new-state]
-    (if-let [problems (s/check schema new-state)]
-      (do
-        (log problems)
-        db)
-      new-state)))
+ :set-db
+ (fn [db new-state]
+   (if-let [problems (s/check schema new-state)]
+     (do
+       (log problems)
+       db)
+     new-state)))
 
 
 (register-handler-for
  :storage-error
  (fn [db err-event error]
    (log error)
-   ; currently do nothing error handling should be here
+   ;; currently do nothing error handling should be here
    db))
 
 (register-handler-for
-  :load-db
-  (fn [db _]
-    (db/load #(dispatch [:set-db %1]) #(dispatch [:storage-error :load-db %1]))
-    db))
+ :load-db
+ (fn [db _]
+   (db/load #(dispatch [:set-db %1]) #(dispatch [:storage-error :load-db %1]))
+   db))
 
 (register-handler-for
-  :save-db
-  (fn [db _]
-    (println db)
-    (let [db-filtered (apply dissoc db db-ignored-keys)]
-      (db/save! db-filtered #(dispatch [:storage-error :save-db %1]))
-      db)))
+ :save-db
+ (fn [db _]
+   (println db)
+   (let [db-filtered (apply dissoc db db-ignored-keys)]
+     (db/save! db-filtered #(dispatch [:storage-error :save-db %1]))
+     db)))
 
 ;; db handlers
 ;; -------------------------------------------------------------
 
-; (register-handler-for
-;   :logout
-;   (fn [db _]
-;     (api/signout
-;       :on-success (fn []))
-;     (auth/set-user! db nil)
-;     (dispatch [:save-db])
-;     (dispatch [:set-page :login])
-;     (-> app-db
-;       (assoc :services (:services db)))))  ;; we need to preserve the instance of Navigator and Toaster
-
+;; (register-handler-for
+;;   :logout
+;;   (fn [db _]
+;;     (api/signout
+;;       :on-success (fn []))
+;;     (auth/set-user! db nil)
+;;     (dispatch [:save-db])
+;;     (dispatch [:set-page :login])
+;;     (-> app-db
+;;       (assoc :services (:services db)))))  ;; we need to preserve the instance of Navigator and Toaster
 
 (register-handler-for
  :login
@@ -240,44 +238,43 @@
 (register-api-call-handler
  :begin-api-event-key  :auth/logout
  :api-call             api/signout
- :params-fn            (fn [db _]
-                          {})
+ :params-fn            (fn [db _] {})
  :success-fn           (fn [db _ _]
-                          (dispatch [:save-db])
-                          (db/cache! user-pwd-cache-key nil)
-                          (dispatch [:set-page :login])
-                          (-> app-db
-                            (assoc :services (:services db))))  ;; we need to preserve the instance of Navigator and Toaster
+                         (dispatch [:save-db])
+                         (db/cache! user-pwd-cache-key nil)
+                         (dispatch [:set-page :login])
+                         (-> app-db
+                             (assoc :services (:services db))))  ;; we need to preserve the instance of Navigator and Toaster
  :error-fn             (fn [db]
                          (-> db
                              (auth/set-error! "Logout failed"))))
 
 
 (register-handler-for
-  :auth-fail
-  (fn [db error]
-    (-> db
-        (auth/set-in-progress! false)
-        (auth/set-user!        nil)
-        (auth/set-error!       "Authentication failed"))))
+ :auth-fail
+ (fn [db error]
+   (-> db
+       (auth/set-in-progress! false)
+       (auth/set-user!        nil)
+       (auth/set-error!       "Authentication failed"))))
 
 (register-handler-for
-  :auth-success
-  (fn [db user]
-    (dispatch [:save-db])
-    (when (= (:page db) "login")
-      (dispatch [:set-page :inbox]))
-    (-> db
-        (auth/set-in-progress! false)
-        (auth/set-user!        user)
-        (auth/set-error!       nil))))
+ :auth-success
+ (fn [db user]
+   (dispatch [:save-db])
+   (when (= (:page db) "login")
+     (dispatch [:set-page :inbox]))
+   (-> db
+       (auth/set-in-progress! false)
+       (auth/set-user!        user)
+       (auth/set-error!       nil))))
 
 (register-handler-for
  :set-offline
  (fn [db mode]
    (when-let [toaster (get-in db [:services :toaster])]
-            (log toaster)
-            (toaster "You are currently offline" 5000))
+     (log toaster)
+     (toaster "You are currently offline" 5000))
 
    (assoc db :network-state mode)))
 
@@ -359,10 +356,10 @@
       (fn [error]
         (log error)
         (condp = (:type error)
-           :invalid-credentials (dispatch [:logout])
-           :network-error       (do (dispatch [:set-offline true])
-                                  (dispatch [:message/send-to-fail to-user-id content]))
-           (dispatch [:unknown-error]))))
+          :invalid-credentials (dispatch [:logout])
+          :network-error       (do (dispatch [:set-offline true])
+                                   (dispatch [:message/send-to-fail to-user-id content]))
+          (dispatch [:unknown-error]))))
 
      db)))
 
@@ -396,13 +393,12 @@
    ;; check once
    ;; Currently any way to check NetInfo does not work
    ;; This is left here as warning
-   ;(js/setTimeout
-   ;    check-nework-state
-   ;    15000)
+   ;;(js/setTimeout
+   ;;    check-nework-state
+   ;;    15000)
    db))
 
 (comment
-
   (re-frame.core/dispatch [:set-page :inbox])
   (re-frame.core/dispatch [:inbox/fetch])
   (re-frame.core/subscribe [:inbox/get]))
